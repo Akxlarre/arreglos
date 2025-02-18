@@ -1312,10 +1312,15 @@ $opt .= '</select>';
                     idproducto: productoDetalle.idproducto,
                     cantidad: productoDetalle.cantidad,
                     tieneserie: productoDetalle.tieneserie,
-                    series: productoDetalle.series.map(s => s.serie) // Extrae el array de series del producto
+                    seriesconcatenadas: productoDetalle.series.map(s => ({ // <-- Crea 'seriesconcatenadas' AHORA
+                        ser_id: s.ser_id,       // <-- Incluye 'ser_id'
+                        idporducto: productoDetalle.idproducto, // <-- Incluye 'idporducto'
+                        serie: s.serie         // <-- Incluye 'serie'
+                    }))
                 };
                 dataTras["prods"].push(prodData);
             });
+
 
             console.log("guardarTrapaso - dataTras.prods:", JSON.stringify(dataTras.prods));
 
