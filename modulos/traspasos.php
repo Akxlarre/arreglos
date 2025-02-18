@@ -253,7 +253,7 @@ $opt .= '</select>';
                             </div>
                             <div class="form-group" id="formbutton">
                                 <div class="col-sm-6">
-                                    <button type="button" class="btn btn-success btn-rounded" onclick="guardarTrapaso()">Guardar</button>&nbsp;&nbsp;<button type="button" class="btn btn-danger btn-rounded" onclick="cancelar()">Cancelar</button>
+                                    <button type="button" class="btn btn-success btn-rounded" onclick="guardarTrapaso()" id="btnGuardarTraspaso">Guardar</button>&nbsp;&nbsp;<button type="button" class="btn btn-danger btn-rounded" onclick="cancelar()">Cancelar</button>
                                 </div>
                             </div>
                         </form>
@@ -1098,7 +1098,7 @@ $opt .= '</select>';
 
             dpro += "<tr id='fila" + valor.idproducto + "'><td>" + valor.cantidad + "</td><td>" + valor.nombrepro + "</td><td>" + seriesconca + "</td><td class='text-center'><button type='button' class='btn btn-danger bnt-sm btn-circle' onclick='quitarDetalle(\"" + valor.idproducto + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
         });
-        $("#tb_prodoc tbody").html(dpro); // Reemplazamos con .html en lugar de .append
+        $("#tb_prodoc tbody").html(dpro); 
         $('#tb_prodoc').DataTable({
             "language": {
                 url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
@@ -1114,6 +1114,7 @@ $opt .= '</select>';
         });
         console.log("agregarProaTras - detalletraspaso after:", JSON.stringify(detalletraspaso));
         console.log("agregarProaTras - END");
+        updateGuardarButtonState(); // Actualiza el estado del botón de guardar
     }
 
 
@@ -1164,7 +1165,7 @@ $opt .= '</select>';
                 //         seriesconca += valor1.serie + ',';
                 //     }
                 // })
-                seriesconca = detalle.series.map(s => s.serie).join(', '); // Ahora las series vienen de detalle.series
+                seriesconca = detalle.series.map(s => s.serie).join(', '); 
 
                 dpro += "<tr id='fila" + contador + "'><td align=\"center\">" + detalle.cantidad + "</td><td>" + detalle.producto + "</td><td id='clases_" + contador + "'>" + (seriesconca == '' ? '<span class="badge badge-danger">N/A</span>' : seriesconca) + "</td><td class='text-center'><button type='button' class='btn btn-sm btn-danger btn-circle' onclick='quitarDetalle(\"" + contador + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
                 contador++;
@@ -1232,6 +1233,7 @@ $opt .= '</select>';
         });
         console.log("agregaratrapaso - detalletraspaso after:", JSON.stringify(detalletraspaso));
         console.log("agregaratrapaso - END");
+        updateGuardarButtonState();
     }
 
     function quitarDetalle(codigo) {
@@ -1239,7 +1241,7 @@ $opt .= '</select>';
             console.log("quitarDetalle - codigo:", codigo, typeof codigo);
 
             // 'codigo' a número usando parseInt()
-            codigo = parseInt(codigo); // CONVERSIÓN A NÚMERO AQUÍ
+            codigo = parseInt(codigo);
 
             console.log("quitarDetalle - codigo (after parseInt):", codigo, typeof codigo); // Log para verificar después de la conversión
             console.log("quitarDetalle - detalletraspaso before:", JSON.stringify(detalletraspaso));
@@ -1267,6 +1269,7 @@ $opt .= '</select>';
             console.log("quitarDetalle - detalletraspaso after filter:", JSON.stringify(detalletraspaso));
             actualizarTablaDetalle(); // Re-renderiza la tabla para reflejar los cambios
             console.log("quitarDetalle - END");
+            updateGuardarButtonState(); // Actualiza el estado del botón de guardar
     }
 
     function actualizarTablaDetalle() {
@@ -1282,7 +1285,7 @@ $opt .= '</select>';
 
             dpro += "<tr id='fila" + valor.idproducto + "'><td>" + valor.cantidad + "</td><td>" + valor.nombrepro + "</td><td>" + seriesconca + "</td><td class='text-center'><button type='button' class='btn btn-danger bnt-sm btn-circle' onclick='quitarDetalle(\"" + valor.idproducto + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
         });
-        $("#tb_prodoc tbody").html(dpro); // Reemplazamos con .html
+        $("#tb_prodoc tbody").html(dpro); 
         $('#tb_prodoc').DataTable({
             "language": {
                 url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
@@ -1298,6 +1301,7 @@ $opt .= '</select>';
         });
         console.log("actualizarTablaDetalle - detalletraspaso after:", JSON.stringify(detalletraspaso));
         console.log("actualizarTablaDetalle - END");
+        updateGuardarButtonState(); // Actualiza el estado del botón de guardar
     }
 
 
@@ -1360,6 +1364,17 @@ $opt .= '</select>';
             location.reload();
         });
         console.log("guardarTrapaso - END");
+    }
+
+    // Función para actualizar el estado del botón de guardar traspaso
+    function updateGuardarButtonState() {
+        const guardarButton = document.getElementById('btnGuardarTraspaso');
+
+        if (detalletraspaso.length > 0) { // Si hay productos en detalletraspaso
+            guardarButton.removeAttribute('disabled'); // Habilita el botón (remueve el atributo 'disabled')
+        } else { // Si detalletraspaso está vacío (no hay productos)
+            guardarButton.setAttribute('disabled', 'disabled'); // Deshabilita el botón (añade el atributo 'disabled')
+        }
     }
 
     function convertDateFormat(string) {
@@ -2045,4 +2060,5 @@ $opt .= '</select>';
         opcionTraspaso = 2;
         getAllAsociacion();
     }
+    updateGuardarButtonState(); // Llama a la función para actualizar el estado del botón de guardar traspaso al cargar la página
 </script>
