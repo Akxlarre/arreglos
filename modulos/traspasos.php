@@ -1010,18 +1010,22 @@ $opt .= '</select>';
             }
 
         });
-    }
-    detalletraspaso = [];
+    }detalletraspaso = [];
     temptras = [];
-    var seriesconcatenadas = [];
+    // var seriesconcatenadas = []; // SE elimino la variable global seriesconcatenadas
 
     function agregarProaTras(index, idprod) {
+        console.log("agregarProaTras - START");
+        console.log("agregarProaTras - detalletraspaso before:", JSON.stringify(detalletraspaso));
+        console.log("agregarProaTras - index:", index, "idprod:", idprod);
+
         let temp2 = [];
 
         if ($.fn.DataTable.isDataTable('#tb_prodoc')) {
             $('#tb_prodoc').DataTable().destroy();
         }
         if ($("#cod" + index + "").is(':checked')) {
+            console.log("agregarProaTras - Checkbox is checked");
 
             temp.push({
                 'id': index,
@@ -1030,79 +1034,48 @@ $opt .= '</select>';
             //console.log("agregar");
             idpro = $("#producto").val();
             nombrepro = $("#producto option:selected").text();
+            var serieText = $("#ser_" + index + '_' + idprod).text(); // Obtiene el texto de la serie
+            console.log("agregarProaTras - serieText:", serieText);
 
-            seriesconcatenadas.push({
-                'idporducto': idprod,
-                'serie': $("#ser_" + index + '_' + idprod).text(),
-                'ser_id': index
-            });
 
-            var val = 1;
-            /*if(detalletraspaso.length==0){
-                detalletraspaso.push({'idproducto':idprod,'cantidad':1,'nombrepro':nombrepro});
-            }else{*/
-            $.each(detalletraspaso, function(i, item) {
-                if (item.idproducto == idprod) {
-                    var sumcant = 1 + parseInt(item.cantidad);
-                    detalletraspaso[i]['cantidad'] = sumcant;
-                    detalletraspaso[i]['seriesconcatenadas'] = seriesconcatenadas;
-                    val = 0;
-                }
-            });
-            /*}
-             */
-            if (val == 1) {
+            var productoEnDetalle = detalletraspaso.find(item => item.idproducto === idprod);
+            console.log("agregarProaTras - productoEnDetalle found:", productoEnDetalle);
+
+            if (productoEnDetalle) {
+                console.log("agregarProaTras - Producto already in detalletraspaso, updating series and quantity");
+                productoEnDetalle.series.push({
+                    'serie': serieText,
+                    'ser_id': index
+                });
+                productoEnDetalle.cantidad++;
+            } else {
+                console.log("agregarProaTras - Producto NOT found in detalletraspaso, adding new product");
                 detalletraspaso.push({
                     'idproducto': idprod,
                     'cantidad': 1,
                     'nombrepro': nombrepro,
-                    'seriesconcatenadas': seriesconcatenadas,
-                    'tieneserie': (Object.keys(seriesconcatenadas).length > 0 ? "SI" : "NO"),
+                    'series': [{ 'serie': serieText, 'ser_id': index }],
+                    'tieneserie': "SI",
                 });
             }
 
-            /*if(typeof detalletraspaso[idpro] === 'undefined') {
-                 cactual=0;
-            }else{
-                 cactual=parseInt(detalletraspaso[idpro]["cantidad"]);
-            }
 
-            cantidad = cactual + 1;
-            series[index]          = ({"id":index,"serie":codigos[index]});
-            detalletraspaso[idpro] = ({"cantidad":cantidad,"tieneserie":"SI","idpro":idpro,"producto":nombrepro,"series":series,'ttraspaso':opcionTraspaso});*/
         } else {
-            /*cantidad = detalletraspaso[idpro]["cantidad"] - 1;
-            if(parseInt(cantidad)==0){
-                delete detalletraspaso[idpro];	
-            }else{
-                detalletraspaso[idpro]["cantidad"] = cantidad ;
-                delete detalletraspaso[idpro]["series"][index];
-            }*/
-            var aborrar = $("#ser_" + index + '_' + idprod).text();
-            var tempalb = [];
-            $.each(seriesconcatenadas, function(i, item) {
-                if (item.serie != aborrar) {
-                    tempalb.push({
-                        'idporducto': idprod,
-                        'serie': $("#ser_" + index + '_' + idprod).text()
-                    });
-                }
-            });
-
-            seriesconcatenadas = tempalb;
-
-
+            console.log("agregarProaTras - Checkbox is NOT checked (deselected)");
+            var serieABorrar = $("#ser_" + index + '_' + idprod).text();
+            console.log("agregarProaTras - serieABorrar:", serieABorrar);
             $.each(detalletraspaso, function(i, item) {
                 if (item.idproducto == idprod) {
-                    var res = parseInt(item.cantidad) - 1;
-                    detalletraspaso[i]['cantidad'] = res;
-                    val = 0;
+                    console.log("agregarProaTras - Found product in detalletraspaso to remove serie from");
+                    item.series = item.series.filter(s => s.serie !== serieABorrar);
+                    item.cantidad--;
+                    console.log("agregarProaTras - cantidad after decrement:", item.cantidad);
 
-                    if (res <= 0) {
-                        var myArray = detalletraspaso;
-                        var newArray = myArray.filter((item) => item.idproducto !== idprod);
-                        detalletraspaso = newArray;
+                    if (item.cantidad <= 0) {
+                        console.log("agregarProaTras - cantidad <= 0, removing product from detalletraspaso");
+                        detalletraspaso.splice(i, 1);
                     }
+                    return false;
                 }
             });
 
@@ -1117,20 +1090,15 @@ $opt .= '</select>';
 
             temp = temp2;
         }
-        // console.log(detalletraspaso);
+
         dpro = "";
         $.each(detalletraspaso, function(index, valor) {
-
             var seriesconca = '';
-            $.each(seriesconcatenadas, function(index1, valor1) {
-                if (valor.idproducto == valor1.idporducto) {
-                    seriesconca += valor1.serie + ',';
-                }
-            })
+            seriesconca = valor.series.map(s => s.serie).join(', ');
 
             dpro += "<tr id='fila" + valor.idproducto + "'><td>" + valor.cantidad + "</td><td>" + valor.nombrepro + "</td><td>" + seriesconca + "</td><td class='text-center'><button type='button' class='btn btn-danger bnt-sm btn-circle' onclick='quitarDetalle(\"" + valor.idproducto + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
         });
-        $("#tb_prodoc tbody").html(dpro);
+        $("#tb_prodoc tbody").html(dpro); // Reemplazamos con .html en lugar de .append
         $('#tb_prodoc').DataTable({
             "language": {
                 url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
@@ -1144,15 +1112,22 @@ $opt .= '</select>';
             "info": false,
             "autoWidth": false
         });
+        console.log("agregarProaTras - detalletraspaso after:", JSON.stringify(detalletraspaso));
+        console.log("agregarProaTras - END");
     }
 
 
 
     function agregaratrapaso(indice = null, id = 0, idgps = 0, _serie = '') {
+        console.log("agregaratrapaso - START");
+        console.log("agregaratrapaso - detalletraspaso before:", JSON.stringify(detalletraspaso));
+        console.log("agregaratrapaso - indice:", indice, "id:", id, "idgps:", idgps, "_serie:", _serie);
+
         if ($.fn.DataTable.isDataTable('#tb_prodoc')) {
             $('#tb_prodoc').DataTable().destroy();
         }
         if (opcionTraspaso == 1) {
+            console.log("agregaratrapaso - opcionTraspaso == 1");
             // codigo=Math.floor(Math.random()*99999);
             cantidad = parseInt($("input[name='cantidad']").val());
             maximo = parseInt($("#disponibles").val());
@@ -1175,7 +1150,7 @@ $opt .= '</select>';
                 "temp": temp,
                 "idpro": idpro,
                 "producto": nombrepro,
-                "series": series,
+                "series": [], // Inicializa series como array vacio para nuevos productos
                 'ttraspaso': opcionTraspaso
             });
 
@@ -1183,26 +1158,18 @@ $opt .= '</select>';
             let contador = 0;
             dpro = "";
             Object.entries(detalletraspaso).forEach(([idpro, detalle]) => {
-                var seriesconca = '';
-                $.each(seriesconcatenadas, function(index1, valor1) {
-                    if (detalle.idproducto == valor1.idporducto) {
-                        seriesconca += valor1.serie + ',';
-                    }
-                })
+                // var seriesconca = ''; // Eliminamos esta variable local redundante
+                // $.each(seriesconcatenadas, function(index1, valor1) { // Ya no usamos seriesconcatenadas global
+                //     if (detalle.idproducto == valor1.idporducto) {
+                //         seriesconca += valor1.serie + ',';
+                //     }
+                // })
+                seriesconca = detalle.series.map(s => s.serie).join(', '); // Ahora las series vienen de detalle.series
 
                 dpro += "<tr id='fila" + contador + "'><td align=\"center\">" + detalle.cantidad + "</td><td>" + detalle.producto + "</td><td id='clases_" + contador + "'>" + (seriesconca == '' ? '<span class="badge badge-danger">N/A</span>' : seriesconca) + "</td><td class='text-center'><button type='button' class='btn btn-sm btn-danger btn-circle' onclick='quitarDetalle(\"" + contador + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
                 contador++;
             });
 
-            //$.each(detalletraspaso, function(index, valor) {
-            //    var seriesconca = '';
-            //    $.each(seriesconcatenadas, function(index1, valor1) {
-            //        if (valor.idproducto == valor1.idporducto) {
-            //            seriesconca += valor1.serie + ',';
-            //        }
-            //    })
-            //    dpro += "<tr id='fila" + index + "'><td>" + valor.cantidad + "</td><td>" + valor.producto + "</td><td id='clases_" + index + "'>" + seriesconca + "</td><td class='text-center'><button type='button' class='btn btn-sm btn-danger btn-circle' onclick='quitarDetalle(\"" + index + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
-            //});
 
             $("#tb_prodoc tbody").html(dpro);
 
@@ -1210,6 +1177,7 @@ $opt .= '</select>';
             $("input[name='cantidad']").val("");
             $("#disponibles, input[name='disponibles']").val("");
         } else {
+            console.log("agregaratrapaso - opcionTraspaso != 1 (KIT GPS)");
             let idpro = idgps;
             var randomNo = Math.floor(Math.random() * 9999999);
             let asyn = $.get("operaciones.php", {
@@ -1262,10 +1230,15 @@ $opt .= '</select>';
             "info": false,
             "autoWidth": false
         });
+        console.log("agregaratrapaso - detalletraspaso after:", JSON.stringify(detalletraspaso));
+        console.log("agregaratrapaso - END");
     }
 
     function quitarDetalle(codigo) {
-        $("#fila" + codigo + "").remove();
+        console.log("quitarDetalle - START");
+        console.log("quitarDetalle - codigo:", codigo);
+        console.log("quitarDetalle - detalletraspaso before:", JSON.stringify(detalletraspaso));
+
 
         let temp2 = [];
         $.each(temp, function(i, item) {
@@ -1280,18 +1253,73 @@ $opt .= '</select>';
         });
 
         temp = temp2;
+        console.log("quitarDetalle - temp after update:", temp);
 
-        delete detalletraspaso[codigo];
+
+        // Eliminamos el producto de detalletraspaso directamente por idproducto
+        detalletraspaso = detalletraspaso.filter(item => item.idproducto !== codigo);
+        console.log("quitarDetalle - detalletraspaso after filter:", JSON.stringify(detalletraspaso));
+        actualizarTablaDetalle(); // Re-renderiza la tabla para reflejar los cambios
+        console.log("quitarDetalle - END");
     }
 
+    function actualizarTablaDetalle() {
+        console.log("actualizarTablaDetalle - START");
+        console.log("actualizarTablaDetalle - detalletraspaso before:", JSON.stringify(detalletraspaso));
+        if ($.fn.DataTable.isDataTable('#tb_prodoc')) {
+            $('#tb_prodoc').DataTable().destroy();
+        }
+        dpro = "";
+        $.each(detalletraspaso, function(index, valor) {
+            var seriesconca = '';
+            seriesconca = valor.series.map(s => s.serie).join(', ');
+
+            dpro += "<tr id='fila" + valor.idproducto + "'><td>" + valor.cantidad + "</td><td>" + valor.nombrepro + "</td><td>" + seriesconca + "</td><td class='text-center'><button type='button' class='btn btn-danger bnt-sm btn-circle' onclick='quitarDetalle(\"" + valor.idproducto + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
+        });
+        $("#tb_prodoc tbody").html(dpro); // Reemplazamos con .html
+        $('#tb_prodoc').DataTable({
+            "language": {
+                url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
+            },
+            "paging": false,
+            "lengthChange": true,
+            /*"lengthMenu": [[20,-1], [20,"Todos"]],
+            "pageLength":20,*/
+            "searching": true,
+            "ordering": true,
+            "info": false,
+            "autoWidth": false
+        });
+        console.log("actualizarTablaDetalle - detalletraspaso after:", JSON.stringify(detalletraspaso));
+        console.log("actualizarTablaDetalle - END");
+    }
+
+
     function guardarTrapaso() {
+        console.log("guardarTrapaso - START");
+        console.log("guardarTrapaso - detalletraspaso:", JSON.stringify(detalletraspaso));
         dataTras = {};
         if ($("#bodega").val() != "") {
             dataTras["usuario"] = <?= $_SESSION['cloux_new'] ?>;
             dataTras["fecha"] = convertDateFormat($("input[name='fecha']").val());
             dataTras["bodega"] = $("#bodega").val();
             dataTras["productos"] = temp;
-            dataTras["prods"] = detalletraspaso;
+            dataTras["prods"] = []; // Inicializa prods como un array vacio
+            console.log("guardarTrapaso - detalletraspaso before prods processing:", JSON.stringify(detalletraspaso));
+
+            detalletraspaso.forEach(function(productoDetalle) {
+                let prodData = {
+                    idproducto: productoDetalle.idproducto,
+                    cantidad: productoDetalle.cantidad,
+                    tieneserie: productoDetalle.tieneserie,
+                    series: productoDetalle.series.map(s => s.serie) // Extrae el array de series del producto
+                };
+                dataTras["prods"].push(prodData);
+            });
+
+            console.log("guardarTrapaso - dataTras.prods:", JSON.stringify(dataTras.prods));
+
+
             dataTras["observaciones"] = $("textarea[name='observaciones']").val();
         } else {
             Swal.fire(
@@ -1303,12 +1331,14 @@ $opt .= '</select>';
         }
 
         json = JSON.stringify(dataTras);
+        console.log("guardarTrapaso - json to send:", json);
         $.post("operaciones.php", {
             numero: '' + Math.floor(Math.random() * 9999999) + '',
             operacion: 'nuevoTraspasonew',
             traspaso: json,
             retornar: 'no'
         }, function(data) {
+            console.log("guardarTrapaso - $.post response data:", data);
 
             if (data.logo != 'error') {
                 toastr.success(data.mensaje);
@@ -1318,8 +1348,8 @@ $opt .= '</select>';
 
             location.reload();
         });
+        console.log("guardarTrapaso - END");
     }
-
 
     function convertDateFormat(string) {
         var info = string.split('/').reverse().join('/');
