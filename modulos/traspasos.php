@@ -1235,34 +1235,39 @@ $opt .= '</select>';
     }
 
     function quitarDetalle(codigo) {
-        console.log("quitarDetalle - START");
-        console.log("quitarDetalle - codigo:", codigo, typeof codigo); // Añadido log para tipo de 'codigo'
-        console.log("quitarDetalle - detalletraspaso before:", JSON.stringify(detalletraspaso));
+            console.log("quitarDetalle - START");
+            console.log("quitarDetalle - codigo:", codigo, typeof codigo);
 
-        let temp2 = [];
-        $.each(temp, function(i, item) {
-            if (item.idpro != codigo) {
-                temp2.push({
-                    'id': item.id,
-                    'idpro': item.idpro
-                });
-            } else {
-                $('#cod' + item.id).prop('checked', false);
-            }
-        });
+            // 'codigo' a número usando parseInt()
+            codigo = parseInt(codigo); // CONVERSIÓN A NÚMERO AQUÍ
 
-        temp = temp2;
-        console.log("quitarDetalle - temp after update:", temp);
+            console.log("quitarDetalle - codigo (after parseInt):", codigo, typeof codigo); // Log para verificar después de la conversión
+            console.log("quitarDetalle - detalletraspaso before:", JSON.stringify(detalletraspaso));
 
-        // Eliminamos el producto de detalletraspaso directamente por idproducto
-        detalletraspaso = detalletraspaso.filter(item => {
-            console.log("quitarDetalle - filter item.idproducto:", item.idproducto, typeof item.idproducto, "codigo:", codigo, typeof codigo); // Añadido log dentro del filter para tipos
-            return item.idproducto !== codigo;
-        });
-        console.log("quitarDetalle - detalletraspaso after filter:", JSON.stringify(detalletraspaso));
-        actualizarTablaDetalle(); // Re-renderiza la tabla para reflejar los cambios
-        console.log("quitarDetalle - END");
-    }   
+            let temp2 = [];
+            $.each(temp, function(i, item) {
+                if (item.idpro != codigo) {
+                    temp2.push({
+                        'id': item.id,
+                        'idpro': item.idpro
+                    });
+                } else {
+                    $('#cod' + item.id).prop('checked', false);
+                }
+            });
+
+            temp = temp2;
+            console.log("quitarDetalle - temp after update:", temp);
+
+            // Elimina el producto de detalletraspaso directamente por idproducto
+            detalletraspaso = detalletraspaso.filter(item => {
+                console.log("quitarDetalle - filter item.idproducto:", item.idproducto, typeof item.idproducto, "codigo:", codigo, typeof codigo);
+                return item.idproducto !== codigo; // Ahora 'codigo' es número y 'item.idproducto' también
+            });
+            console.log("quitarDetalle - detalletraspaso after filter:", JSON.stringify(detalletraspaso));
+            actualizarTablaDetalle(); // Re-renderiza la tabla para reflejar los cambios
+            console.log("quitarDetalle - END");
+    }
 
     function actualizarTablaDetalle() {
         console.log("actualizarTablaDetalle - START");
