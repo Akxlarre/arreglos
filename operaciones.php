@@ -3524,7 +3524,7 @@ OPERACIONES INVENTARIO
     while ($fila = mysqli_fetch_array($res)) {
 
       $detallestock = getStockxProducto($fila["pro_id"], $fila["pro_serie"]);
-      $productos[]  = array("idpro" => $fila["pro_id"], "codigo" => $fila["pro_codigo"], "proserie" => $fila["pro_serie"], "idfam" => $fila["pro_familia"], "familia" => $fila["familia"], "idsfam" => $fila["pro_subfamilia"], "subfamilia" => $fila["subfamilia"], "idmar" => $fila["pro_marca"], "marca" => $fila["marca"], "nombre" => $fila["pro_nombre"], "sminimo" => $fila["pro_stockminimo"], "stock" => $detallestock["stock"], "cantidad" => $fila["cantidad"], "precio" => $fila["pro_valor"], "detallestock" => $detallestock);
+      $productos[]  = array("idpro" => $fila["pro_id"], "codigo" => $fila["pro_codigo"], "proserie" => $fila["pro_serie"], "idfam" => $fila["pro_familia"], "familia" => $fila["familia"], "idsfam" => $fila["pro_subfamilia"], "subfamilia" => $fila["subfamilia"], "idmar" => $fila["pro_marca"], "marca" => $fila["marca"], "nombre" => $fila["pro_nombre"], "sminimo" => $fila["pro_stockminimo"],"smaximo" => $fila["pro_stockmaximo"], "stock" => $detallestock["stock"], "cantidad" => $fila["cantidad"], "precio" => $fila["pro_valor"], "detallestock" => $detallestock);
     }
     mysqli_close($link);
     echo json_encode($productos);

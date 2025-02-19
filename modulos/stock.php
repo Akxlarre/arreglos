@@ -59,6 +59,7 @@ while($fila2 = mysqli_fetch_array($res2)){
                                             <th>Subfamilia</th>
                                             <th>Marca</th>
                                             <th>Stock Mínimo</th>
+                                            <th>Stock Máximo</th>
                                             <th>Stock</th>
                                             <th>Valor</th>
                                             <th></th>
@@ -233,11 +234,11 @@ while($fila2 = mysqli_fetch_array($res2)){
                 stock     = parseInt(valor.stock);
                 let style = 'height: 35px;width: 35px;';
                 if(stock > sminalert){
-                    color = "bg-success";   
+                    color = "bg-success";
                 }else if(stock >= smin && stock <= sminalert){
-                    color = "bg-warning";   
+                    color = "bg-warning";
                 }else{
-                    color = "bg-danger";        
+                    color = "bg-danger";
                 }
 
                 if(valor.marca =="" || valor.marca ==null){
@@ -251,7 +252,7 @@ while($fila2 = mysqli_fetch_array($res2)){
                     subfamilia = valor.subfamilia;
                 }
 
-                filas += "<tr><td>"+x+"</td><td>"+valor.nombre+"</td><td>"+valor.familia+"</td><td>"+subfamilia+"</td><td>"+marca+"</td><td>"+valor.sminimo+"</td><td class='nstock' align='center'><span >"+valor.cantidad+"</span></td><td class='nvalor'><span class='label label-default btn-rounded pointer' onclick='modificarValor(\""+index+"\");'>$"+enpesos(valor.precio)+"</span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-info btn-circle' onclick='inventarioProducto("+index+","+valor.idpro+")'><i class='fa fa-cubes' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-warning btn-circle' onclick='editarProducto(\""+index+"\")'><i class='fa fa-edit' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-danger btn-circle' onclick='quitarProducto(\""+index+"\")'><i class='fa fa-trash'></i></span></td></tr>";
+                filas += "<tr><td>"+x+"</td><td>"+valor.nombre+"</td><td>"+valor.familia+"</td><td>"+subfamilia+"</td><td>"+marca+"</td><td>"+valor.sminimo+"</td><td>"+valor.smaximo+"</td><td class='nstock' align='center'><span >"+valor.cantidad+"</span></td><td class='nvalor'><span class='label label-default btn-rounded pointer' onclick='modificarValor(\""+index+"\");'>$"+enpesos(valor.precio)+"</span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-info btn-circle' onclick='inventarioProducto("+index+","+valor.idpro+")'><i class='fa fa-cubes' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-warning btn-circle' onclick='editarProducto(\""+index+"\")'><i class='fa fa-edit' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-danger btn-circle' onclick='quitarProducto(\""+index+"\")'><i class='fa fa-trash'></i></span></td></tr>";
             });
 
             $("#tab_productos tbody").html(filas);
