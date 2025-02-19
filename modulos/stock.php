@@ -252,8 +252,7 @@ while($fila2 = mysqli_fetch_array($res2)){
                     subfamilia = valor.subfamilia;
                 }
 
-                filas += "<tr><td>"+x+"</td><td>"+valor.nombre+"</td><td>"+valor.familia+"</td><td>"+subfamilia+"</td><td>"+marca+"</td><td>"+valor.sminimo+"</td><td>"+valor.smaximo+"</td><td class='nstock' align='center'><span >"+valor.cantidad+"</span></td><td class='nvalor'><span class='label label-default btn-rounded pointer' onclick='modificarValor(\""+index+"\");'>$"+enpesos(valor.precio)+"</span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-info btn-circle' onclick='inventarioProducto("+index+","+valor.idpro+")'><i class='fa fa-cubes' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-warning btn-circle' onclick='editarProducto(\""+index+"\")'><i class='fa fa-edit' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-danger btn-circle' onclick='quitarProducto(\""+index+"\")'><i class='fa fa-trash'></i></span></td></tr>";
-            });
+                filas += "<tr><td>"+x+"</td><td>"+valor.nombre+"</td><td>"+valor.familia+"</td><td>"+subfamilia+"</td><td>"+marca+"</td><td align='center'>"+valor.sminimo+"</td><td align='center'>"+valor.smaximo+"</td><td class='nstock' align='center'><span >"+valor.cantidad+"</span></td><td class='nvalor'><span class='label label-default btn-rounded pointer' onclick='modificarValor(\""+index+"\");'>$"+enpesos(valor.precio)+"</span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-info btn-circle' onclick='inventarioProducto("+index+","+valor.idpro+")'><i class='fa fa-cubes' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-warning btn-circle' onclick='editarProducto(\""+index+"\")'><i class='fa fa-edit' aria-hidden='true'></i></span></td><td class='text-center' width=50><span class='pointer btn btn-sm btn-danger btn-circle' onclick='quitarProducto(\""+index+"\")'><i class='fa fa-trash'></i></span></td></tr>";            });
 
             $("#tab_productos tbody").html(filas);
             $('#tab_productos').DataTable({
@@ -383,6 +382,7 @@ while($fila2 = mysqli_fetch_array($res2)){
     $("#marca").val(producto["idmar"]);
     $("textarea[name='nombre']").val(producto["nombre"]);
     $("input[name='sminimo']").val(producto["sminimo"]);
+    $("input[name='smaximo']").val(producto["smaximo"]);
     $("#listadoproductos").hide();
     $("#editarproducto").show();
     }

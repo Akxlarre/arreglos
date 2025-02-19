@@ -4095,114 +4095,130 @@ $inventario["pxv"]=$pxv;*/
 
     break;
 
-  case 'nuevoTraspaso':
+    case 'nuevoTraspaso':
 
-    $datos        = json_decode($_REQUEST["traspaso"], true);
-    $tipo         = 1; // traspaso de bodega principal a bodega tecnico
-    $idtecnico    = $datos["bodega"];
-    $fecharequest =  $datos["fecha"];
-    try {
-      $sql = "insert into traspasos(tras_fecha,tras_bodega,tras_observaciones,tras_usuario,tras_tipo)values('{$fecha}'," . $datos["bodega"] . ",'" . $datos["observaciones"] . "'," . $datos["usuario"] . "," . $tipo . ")";
-      $res = $link->query($sql);
-      $idtras = $link->insert_id;
-      $productos = $datos["productos"];
-      if (count($productos) >  0) {
-        foreach ($productos as $index => $valor) {
-          $idbod = $datos["bodega"];
-          $idpro = $valor["idpro"];
-          $cantidad = $valor["cantidad"];
-          if ((int)$valor["ttraspaso"] == 1) {
-            foreach ($valor["series"] as $index1 => $valor1) {
-              $_serie1 = $valor1['serie'];
-            }
-            $_serie2 = '';
-            $idprodd = $idpro;
-          } else {
-            $sql2 = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
-            $res2 = $link->query($sql2);
-            $val2 = mysqli_fetch_array($res2);
-            $idprodd = $val2['easi_id'];
-            $_serie1 = $val2['easi_seriegps'];
-            $_serie2 = $val2['easi_seriesim'];
-          }
-
-          if ((int)$valor["ttraspaso"] == 1) {
-
-            $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idpro . "," . $cantidad . ",1,'','',0)";
-            $res3 = $link->query($sql3);
-            $iddetalle = $link->insert_id;
-            $stockactual = obtenervalor("productos", "pro_stock", "where pro_id=" . $idpro . "");
-            $nuevostock = $stockactual - $cantidad;
-            $sql4 = "update productos set pro_stock=" . $nuevostock . " where pro_id=" . $idpro . "";
-            $res4 = $link->query($sql4);
-          } else {
-            $sql = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
-            $res = $link->query($sql);
-            $val = mysqli_fetch_array($res);
-            $idprod = $val['easi_idgps'];
-            $response['sql_1_idgps_' . $index] = $idprod;
-            $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idprod . "," . $cantidad . ",2,'" . $_serie1 . "','" . $_serie2 . "'," . $idprodd . ")";
-            $res3 = $link->query($sql3);
-            $iddetalle = $link->insert_id;
-            $response['sql_1_' . $index] = $sql3;
-            $sql4 = "update equipos_asociados set easi_estado=3 where easi_id=" . $idpro . "";
-            $res4 = $link->query($sql4);
-
-            $response['sql_1__update_' . $index] = $sql4;
-          }
-
-          if ($valor["tieneserie"] == "SI") {
-            foreach ($valor["series"] as $index1 => $valor1) {
-              $sql2 = "update codigosxproducto set cxp_estado= 2 where cxp_id=" . $index1 . "";
-              $res2 = $link->query($sql2);
-              $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_nserie,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . ",1," . $valor["idpro"] . ",'" . $valor1["serie"] . "',1,'Traspaso desde bodega principal'," . $idpro . "," . $valor["ttraspaso"] . ",0)";
-              $res3 = $link->query($sql3);
-              $sql4 = "insert into codigosxtraspaso(cxt_detalletraspaso,cxt_serie)values(" . $iddetalle . ",'" . $valor1["serie"] . "')";
-              $res4 = $link->query($sql4);
-            }
-          } else {
-            $tipo = '';
+      $datos        = json_decode($_REQUEST["traspaso"], true);
+      $tipo         = 1; // traspaso de bodega principal a bodega tecnico
+      $idtecnico    = $datos["bodega"];
+      $fecharequest =  $datos["fecha"];
+      $response     = array(); // Inicializa el array de respuesta para JSON
+  
+      try {
+        $link->begin_transaction(); // Iniciar transacción para asegurar la integridad de las operaciones
+  
+        $sql = "insert into traspasos(tras_fecha,tras_bodega,tras_observaciones,tras_usuario,tras_tipo)values('{$fecha}'," . $datos["bodega"] . ",'" . $datos["observaciones"] . "'," . $datos["usuario"] . "," . $tipo . ")";
+        $res = $link->query($sql);
+        $idtras = $link->insert_id;
+        $productos = $datos["productos"];
+  
+        if (count($productos) >  0) {
+          foreach ($productos as $index => $valor) {
+            $idbod = $datos["bodega"];
+            $idpro = $valor["idpro"];
+            $cantidad = $valor["cantidad"];
+            // Ya NO inicializamos $producto_con_stock_minimo aquí
+  
             if ((int)$valor["ttraspaso"] == 1) {
-              $tipo = 'pxt_tipo=1';
-              $idprod = $valor["idpro"];
-              $ideasi = 0;
+              foreach ($valor["series"] as $index1 => $valor1) {
+                $_serie1 = $valor1['serie'];
+              }
+              $_serie2 = '';
+              $idprodd = $idpro;
             } else {
-              $tipo = 'pxt_tipo=2';
+              $sql2 = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
+              $res2 = $link->query($sql2);
+              $val2 = mysqli_fetch_array($res2);
+              $idprodd = $val2['easi_id'];
+              $_serie1 = $val2['easi_seriegps'];
+              $_serie2 = $val2['easi_seriesim'];
+            }
+  
+            if ((int)$valor["ttraspaso"] == 1) {
+  
+              $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idpro . "," . $cantidad . ",1,'','',0)";
+              $res3 = $link->query($sql3);
+              $iddetalle = $link->insert_id;
+  
+              // --- INICIO: Lógica para descontar stock  ---
+              $stockactual = obtenervalor("productos", "pro_stock", "where pro_id=" . $idpro . "");
+              $nuevostock = $stockactual - $cantidad;
+              $sql4 = "update productos set pro_stock=" . $nuevostock . " where pro_id=" . $idpro . "";
+              $res4 = $link->query($sql4);
+              // --- FIN: Lógica para descontar stock ---
+  
+  
+            } else {
+              // Lógica para traspaso de Kits GPS
               $sql = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
               $res = $link->query($sql);
               $val = mysqli_fetch_array($res);
               $idprod = $val['easi_idgps'];
-              $ideasi = $val['easi_id'];
+              $response['sql_1_idgps_' . $index] = $idprod;
+              $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idprod . "," . $cantidad . ",2,'" . $_serie1 . "','" . $_serie2 . "'," . $idprodd . ")";
+              $res3 = $link->query($sql3);
+              $iddetalle = $link->insert_id;
+              $response['sql_1_' . $index] = $sql3;
+              $sql4 = "update equipos_asociados set easi_estado=3 where easi_id=" . $idpro . "";
+              $res4 = $link->query($sql4);
+              $response['sql_1__update_' . $index] = $sql4;
             }
-            $sql31 = "select * from productosxtecnico where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND " . $tipo;
-            $res31 = $link->query($sql31);
-            $cuenta = mysqli_num_rows($res31);
-            $response['sql_select_1_' . ($valor["ttraspaso"])] = $sql31;
-            if ($cuenta > 0) {
-              // producto existe
-              $stoctec = obtenervalor("productosxtecnico", "pxt_cantidad", "where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"]);
-              $nuevostec = intval($stoctec) + intval($valor["cantidad"]);
-              $sql1 = "update productosxtecnico set pxt_cantidad=" . $nuevostec . " where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " && pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"];
-              //echo "cuenta => ".$cuenta." nuevo stock => ".$nuevostec." consulta =>".$sql1 ;
-              // return;
-              $res1 = $link->query($sql1);
-              $response['sql_update_1_' . $index] = $sql1;
+  
+            if ($valor["tieneserie"] == "SI") {
+              foreach ($valor["series"] as $index1 => $valor1) {
+                $sql2 = "update codigosxproducto set cxp_estado= 2 where cxp_id=" . $index1 . "";
+                $res2 = $link->query($sql2);
+                $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_nserie,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . ",1," . $valor["idpro"] . ",'" . $valor1["serie"] . "',1,'Traspaso desde bodega principal'," . $idpro . "," . $valor["ttraspaso"] . ",0)";
+                $res3 = $link->query($sql3);
+                $sql4 = "insert into codigosxtraspaso(cxt_detalletraspaso,cxt_serie)values(" . $iddetalle . ",'" . $valor1["serie"] . "')";
+                $res4 = $link->query($sql4);
+              }
             } else {
-              $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . "," . $valor["cantidad"] . "," . $idprod . ",1,'Traspaso desde bodega principal'," . $ideasi . "," . $valor["ttraspaso"] . ",0)";
-              $res = $link->query($sql3);
-              $response['sql_insert_1_' . $index] = $sql3;
+              $tipo = '';
+              if ((int)$valor["ttraspaso"] == 1) {
+                $tipo = 'pxt_tipo=1';
+                $idprod = $valor["idpro"];
+                $ideasi = 0;
+              } else {
+                $tipo = 'pxt_tipo=2';
+                $sql = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
+                $res = $link->query($sql);
+                $val = mysqli_fetch_array($res);
+                $idprod = $val['easi_idgps'];
+                $ideasi = $val['easi_id'];
+              }
+              $sql31 = "select * from productosxtecnico where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND " . $tipo;
+              $res31 = $link->query($sql31);
+              $cuenta = mysqli_num_rows($res31);
+              $response['sql_select_1_' . ($valor["ttraspaso"])] = $sql31;
+              if ($cuenta > 0) {
+                // producto existe
+                $stoctec = obtenervalor("productosxtecnico", "pxt_cantidad", "where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"]);
+                $nuevostec = intval($stoctec) + intval($valor["cantidad"]);
+                $sql1 = "update productosxtecnico set pxt_cantidad=" . $nuevostec . " where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " && pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"];
+                $res1 = $link->query($sql1);
+                $response['sql_update_1_' . $index] = $sql1;
+              } else {
+                $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . "," . $valor["cantidad"] . "," . $idprod . ",1,'Traspaso desde bodega principal'," . $ideasi . "," . $valor["ttraspaso"] . ",0)";
+                $res = $link->query($sql3);
+                $response['sql_insert_1_' . $index] = $sql3;
+              }
             }
           }
         }
+  
+        $link->commit(); // Confirmar la transacción si todo sale bien
+        $response['logo'] = 'success'; // Indicador de éxito para el frontend
+        $response['mensaje'] = 'Traspaso realizado correctamente.'; // Mensaje de éxito para el usuario
+  
+      } catch (\Throwable $th) {
+        $link->rollback(); // Revertir la transacción en caso de error
+        $dataSend = array();
+        $dataSend[0] = '' . $th;
+        $response['logo'] = 'error'; // Indicador de error para el frontend
+        $response['mensaje'] = 'Error al realizar el traspaso. Por favor, contacte al administrador. Detalles del error: ' . $th->getMessage(); // Mensaje de error para el usuario
       }
       echo json_encode($response);
-    } catch (\Throwable $th) {
-      $dataSend = array();
-      $dataSend[0] = '' . $th;
-      echo json_encode($dataSend);
-    }
-    //echo json_encode($devoluciones);
-    break;
+      break;
 
   case 'newnuevadevolucion':
     $datos = json_decode($_REQUEST["devolucion"], true);
