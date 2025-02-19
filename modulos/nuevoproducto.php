@@ -57,6 +57,10 @@
             <label class="col-sm-4 control-label txtleft">Stock Mínimo</label>
             <div class="col-sm-8"><input type="text" name="sminimo" class="form-control"></div>
         </div>
+        <div class="form-group row">
+            <label class="col-sm-4 control-label txtleft">Stock Máximo</label>
+            <div class="col-sm-8"><input type="text" name="smaximo" class="form-control"></div>
+        </div>
         <div class="form-group">
         <div class="col-sm-4"><button type="submit" class="btn btn-success btn-rounded">Registrar Producto</button></div>
         </div>

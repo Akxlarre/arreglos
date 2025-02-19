@@ -1322,7 +1322,7 @@ $opt .= '</select>';
                     idproducto: productoDetalle.idproducto,
                     cantidad: productoDetalle.cantidad,
                     tieneserie: productoDetalle.tieneserie,
-                    seriesconcatenadas: productoDetalle.series.map(s => ({ // <-- Crea 'seriesconcatenadas' AHORA
+                    seriesconcatenadas: productoDetalle.series.map(s => ({ // <-- Crea 'seriesconcatenadas' AHORA ya que se necesita para enviar al backend (antes se creaba pero no se usaba)
                         ser_id: s.ser_id,       // <-- Incluye 'ser_id'
                         idporducto: productoDetalle.idproducto, // <-- Incluye 'idporducto'
                         serie: s.serie         // <-- Incluye 'serie'

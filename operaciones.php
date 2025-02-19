@@ -3499,12 +3499,15 @@ OPERACIONES INVENTARIO
       $_REQUEST["sminimo"] = 0;
     }
 
+    if ($_REQUEST["smaximo"] == '' || $_REQUEST["smaximo"] == null) {
+      $_REQUEST["smaximo"] = 0; // O un valor por defecto si prefieres
+    }
+
     if ($_REQUEST["codigo"] == '' || $_REQUEST["codigo"] == null) {
       $_REQUEST["codigo"] = 0;
     }
-    $sql = "insert into productos(pro_codigo,pro_serie,pro_familia,pro_subfamilia,pro_marca,pro_nombre,pro_stockminimo)values('" . $_REQUEST["codigo"] . "'," . $serie . "," . $_REQUEST["familia"] . "," . $_REQUEST["subfamilia"] . "," . $_REQUEST["marca"] . ",'" . $_REQUEST["nombre"] . "'," . $_REQUEST["sminimo"] . ")";
-    /*echo $sql;
-die();*/
+    $sql = "insert into productos(pro_codigo,pro_serie,pro_familia,pro_subfamilia,pro_marca,pro_nombre,pro_stockminimo, pro_stockmaximo)values('" . $_REQUEST["codigo"] . "'," . $serie . "," . $_REQUEST["familia"] . "," . $_REQUEST["subfamilia"] . "," . $_REQUEST["marca"] . ",'" . $_REQUEST["nombre"] . "'," . $_REQUEST["sminimo"] . ", " . $_REQUEST["smaximo"] . ")";
+
     $res = $link->query($sql);
     $sale_a = $_REQUEST["retornar"];
     break;
@@ -3881,42 +3884,53 @@ $inventario["pxv"]=$pxv;*/
     }
     echo json_encode($productos);
     break;
-  case 'editarproducto':
-    $serie = 0;
-    $marca = 0;
-    $familia = 0;
-    $subfamilia = 0;
-    $sminimo = 0;
-    if ($_REQUEST["serie"] == '') {
+
+    case 'editarproducto':
       $serie = 0;
-    } else {
-      $serie = $_REQUEST["serie"];
-    }
-    if ($_REQUEST["marca"] == '') {
       $marca = 0;
-    } else {
-      $marca = $_REQUEST["marca"];
-    }
-    if ($_REQUEST["familia"] == '') {
       $familia = 0;
-    } else {
-      $familia = $_REQUEST["familia"];
-    }
-    if ($_REQUEST["subfamilia"] == '') {
       $subfamilia = 0;
-    } else {
-      $subfamilia = $_REQUEST["subfamilia"];
-    }
-    if ($_REQUEST["sminimo"] == '') {
       $sminimo = 0;
-    } else {
-      $sminimo = $_REQUEST["sminimo"];
-    }
-    $sql = "update productos set pro_codigo='" . $_REQUEST["codigo"] . "',pro_serie=" . $serie . ",pro_familia=" . $familia . ",pro_subfamilia=" . $subfamilia . ",pro_marca=" . $marca . ",pro_nombre='" . $_REQUEST["nombre"] . "',pro_stockminimo=" . $sminimo . " where pro_id=" . $_REQUEST["idpro"] . "";
-    $res = $link->query($sql);
-    $sale_a = $_REQUEST["retornar"];
-    // echo $sql;
-    break;
+      $smaximo = 0; 
+  
+      if ($_REQUEST["serie"] == '') {
+        $serie = 0;
+      } else {
+        $serie = $_REQUEST["serie"];
+      }
+      if ($_REQUEST["marca"] == '') {
+        $marca = 0;
+      } else {
+        $marca = $_REQUEST["marca"];
+      }
+      if ($_REQUEST["familia"] == '') {
+        $familia = 0;
+      } else {
+        $familia = $_REQUEST["familia"];
+      }
+      if ($_REQUEST["subfamilia"] == '') {
+        $subfamilia = 0;
+      } else {
+        $subfamilia = $_REQUEST["subfamilia"];
+      }
+      if ($_REQUEST["sminimo"] == '') {
+        $sminimo = 0;
+      } else {
+        $sminimo = $_REQUEST["sminimo"];
+      }
+  
+      if ($_REQUEST["smaximo"] == '') {
+        $smaximo = 0; 
+      } else {
+        $smaximo = $_REQUEST["smaximo"];
+      }
+  
+  
+      $sql = "update productos set pro_codigo='" . $_REQUEST["codigo"] . "',pro_serie=" . $serie . ",pro_familia=" . $familia . ",pro_subfamilia=" . $subfamilia . ",pro_marca=" . $marca . ",pro_nombre='" . $_REQUEST["nombre"] . "',pro_stockminimo=" . $sminimo . ", pro_stockmaximo = " . $smaximo . " where pro_id=" . $_REQUEST["idpro"] . "";
+      $res = $link->query($sql);
+      $sale_a = $_REQUEST["retornar"];
+      // echo $sql;
+      break;
 
   case 'eliminarproducto':
     $sql = "delete from productos where pro_id='" . $_REQUEST["id"] . "'";

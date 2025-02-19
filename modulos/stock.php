@@ -145,6 +145,12 @@ while($fila2 = mysqli_fetch_array($res2)){
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
+                                                    <label class="col-sm-3 control-label txtleft">Stock Máximo</label>
+                                                    <div class="col-sm-2">
+                                                        <input type="text" name="smaximo" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
                                                     <div class="col-sm-offset-3 col-sm-6">
                                                         <button type="submit" class="btn btn-success btn-rounded">      Editar Producto
                                                         </button>
