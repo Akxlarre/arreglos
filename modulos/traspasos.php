@@ -17,6 +17,37 @@ $opt .= '</select>';
 <script src="plugins/sweetalert2/sweetalert2.min.js"></script>
 <script src="plugins/sweetalert2/sweetalert2.min.js"></script>
 <link rel="stylesheet" href="plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+<style>
+    .expand-btn {
+        width:65%;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2em; /* Aumenta la visibilidad del icono */
+    }
+
+    /* Ajusta el tamaño del icono dentro del botón */
+    .expand-btn i {
+        font-size: 1.2em;
+    }
+    /* Se asegura que las tablas sean desplazables en pantallas pequeñas */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    /* Ajustes de margen en dispositivos pequeños */
+    @media (max-width: 768px) {
+        .mt-2 {
+            margin-top: 0.75rem !important;
+        }
+        .mt-3 {
+            margin-top: 1rem !important;
+        }
+    }
+
+</style>
 <!-- modal -->
 <div class="modal" id="mtras">
     <div class="modal-dialog">
@@ -167,8 +198,9 @@ $opt .= '</select>';
 
                             <div class="row pb-2" id="divbuttons">
                                 <div class="col-md-12">
-                                    <button type="button" onclick="verPro()" class="btn btn-sm btn-primary">Traspaso Productos</button>
-                                    <button type="button" onclick="verKit()" class="btn btn-sm btn-primary">Traspaso Kits GPS</button>
+                                    <button type="button" id="btnVerPro" onclick="verPro()" class="btn btn-sm btn-primary" disabled>Traspaso Productos</button>
+                                    <!-- desactivado por el momento -->
+                                    <!-- <button type="button" onclick="verKit()" class="btn btn-sm btn-primary">Traspaso Kits GPS</button> -->
                                 </div>
                             </div>
                             <div class="row oculto" id="divpro">
@@ -179,13 +211,21 @@ $opt .= '</select>';
                                             <?php echo $opt; ?>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-1">
                                         <div class="form-group">
                                             <label for="disponibles">Disponibles</label>
                                             <input type="text" id="disponibles" name="disponibles" class="form-control form-control-sm" disabled>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
+                                        <div class="mb-2">
+                                            <label for = "serieBuscar">Buscar Serie</label>                                                                 <!--  Evita el envío del formulario al presionar Enter -->
+                                            <input type="text" id="serieBuscar" class="form-control" placeholder="Buscar serie..." oninput="filtrarEnVivo()" onkeydown="if(event.keyCode === 13){ return false; }" style="height: calc(2.25rem - 5px);" /> 
+                                        </div>
+                                    </div>
+
+                                    <!-- Se utilizara otra interfaz para agregar productos -->
+                                <!-- <div class="col-md-3">
                                         <div class="form-group">
                                             <label for="cantidad">Cantidad</label>
                                             <input type="text" id="cantidad" name="cantidad" class="form-control form-control-sm">
@@ -193,8 +233,8 @@ $opt .= '</select>';
                                     </div>
                                     <div class="col-md-3">
                                         <button type="button" style="margin-top: 32px;" class="btn btn-sm btn-success btn-circle" onclick="agregaratrapaso()" id="btnaddcan"><i class="fa fa-plus" aria-hidden="true"></i></button>
-                                    </div>
-                                </div>
+                                    </div>-->
+                                </div> 
 
                             </div>
                             <div class="row oculto" id="divkit">
@@ -221,39 +261,65 @@ $opt .= '</select>';
 
                             <div class="form-group">
                                 <div class="row">
+                                    <!-- Tabla para productos CON serie -->
                                     <div class="col-sm-6 oculto" id="tblistcod">
-                                        <table class="table table-bordered table-sm">
-                                            <thead class="thead-dark">
-                                                <th>N° Serie Disponible</th>
-                                                <th></th>
-                                            </thead>
-                                            <tbody>
-                                            </tbody>
-                                        </table>
+                                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                            <table class="table table-bordered table-sm">
+                                                <thead class="thead-dark">
+                                                    <th>N° Serie Disponible</th>
+                                                    <th></th>
+                                                </thead>
+                                                <tbody id="tablaSeriesBody">
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
-                                    <div class="col-sm-6 oculto" id="tablatem">
-                                        <table class="table table-bordered table-sm" id="tb_prodoc">
+                                    <!-- Tabla para productos SIN serie -->
+                                    <div class="col-sm-6 oculto" id="tblistcod_sin_serie">
+                                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                            <table class="table table-bordered table-sm">
+                                                <thead class="thead-dark">
+                                                    <th>Descripción</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Acción</th>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 oculto d-flex flex-column" id="tablatem" style="height: 500px; display: none !important;">
+                                        <!-- Contenedor de la tabla -->
+                                        <div class="table-responsive flex-grow-1" style="overflow-y: auto;">
+                                            <table class="table table-bordered table-sm" id="tb_prodoc">
                                             <thead class="thead-dark">
-                                                <th class="text-center" width=50>Cantidad</th>
+                                                <tr>
+                                                <th class="text-center" width="50">Cantidad</th>
                                                 <th>Producto</th>
                                                 <th>Series</th>
-                                                <th width=50></th>
+                                                <th width="50">Acción</th>
+                                                </tr>
                                             </thead>
                                             <tbody>
+                                                <!-- Filas generadas dinámicamente -->
                                             </tbody>
-                                        </table>
+                                            </table>
+                                        </div>
+
+                                        <!-- Sección Observaciones y Botones, anclada al final con flex -->
+                                        <div class="row mt-auto" style="background: #fff; border-top: 1px solid #ddd;">
+                                            <div class="col-12" id="formobservaciones">
+                                            <div class="form-group">
+                                                <label>Observaciones</label>
+                                                <textarea id="observaciones" name="observaciones" class="form-control rznone" rows="3"></textarea>
+                                            </div>
+                                            </div>
+                                            <div class="col-12 text-center" id="formbutton" style="margin-bottom: 10px;">
+                                            <button type="button" class="btn btn-success btn-rounded" onclick="guardarTrapaso()">Guardar</button>
+                                            &nbsp;&nbsp;
+                                            <button type="button" class="btn btn-danger btn-rounded" onclick="cancelar()">Cancelar</button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="col-sm-6" style="margin-bottom: 20px;">
-                                    <label>Observaciones</label>
-                                    <textarea id='observaciones' name='observaciones' class='form-control rznone' rows=5></textarea>
-                                </div>
-                            </div>
-                            <div class="form-group" id="formbutton">
-                                <div class="col-sm-6">
-                                    <button type="button" class="btn btn-success btn-rounded" onclick="guardarTrapaso()" id="btnGuardarTraspaso">Guardar</button>&nbsp;&nbsp;<button type="button" class="btn btn-danger btn-rounded" onclick="cancelar()">Cancelar</button>
                                 </div>
                             </div>
                         </form>
@@ -318,86 +384,83 @@ $opt .= '</select>';
         </div>
     </div>
 </section>
+<div class="container-fluid">
+  <div class="row" id="formeditar" style="display: none;">
+    
+    <div class="col-12">
+      <input type="hidden" id="valortras" value="">
+    </div>
 
-<div class="col-md-12" id="formeditar" style="display: none;">
-    <input type="hidden" name="" id="valortras" value="">
-    <div class="row" style="margin-top:10px;">
-        <div class="col-md-12">
-            <h3 class="box-title">Editar Traspaso</h3>
-        </div>
+    <div class="col-12 mt-2">
+      <h3 class="box-title">Editar Traspaso</h3>
     </div>
-    <div class="row" style="margin-top:10px;">
-        <div class="col-md-4">
-            <label>Fecha</label>
-            <input type="date" class="form-control form-control-sm" id="dateedit">
-        </div>
-        <div class="col-md-4">
-            <label>Bodega(Técnico)</label>
-            <?= htmlselect('bodegaedit', 'bodegaedit', 'personal', 'per_id', 'per_nombrecorto', '', '', '', 'per_nombrecorto', 'activeTraspaso(1)', '', 'si', 'no', 'no'); ?>
-        </div>
-        <div class="col-md-4">
-            <label>Bodega(Técnico)</label>
-            <?= htmlselect('bodegaedit2', 'bodegaedit2', 'personal', 'per_id', 'per_nombrecorto', '', '', 'where per_id <> 26', 'per_nombrecorto', 'cambioedittecnico(this.value,2)', '', 'si', 'no', 'no'); ?>
-        </div>
+
+    <!-- Fila: Fecha y Bodegas -->
+    <div class="col-md-4 col-12 mt-2">
+      <label>Fecha</label>
+      <input type="date" class="form-control form-control-sm" id="dateedit">
     </div>
-    <div class="row" style="margin-top:10px;">
-        <div class="col-md-6">
-            <h3 class="box-title">Técnico A</h3>
-        </div>
-        <div class="col-md-6">
-            <h3 class="box-title">Técnico B</h3>
-        </div>
+    <div class="col-md-4 col-12 mt-2">
+      <label>Bodega(Técnico)</label>
+      <?= htmlselect('bodegaedit', 'bodegaedit', 'personal', 'per_id', 'per_nombrecorto', '', '', '', 'per_nombrecorto', 'activeTraspaso(1)', '', 'si', 'no', 'no'); ?>
     </div>
-    <div class="row" style="margin-top:10px;">
-        <div class="col-md-6">
-            <div class="col-md-12 table-resposive" style="max-height: 600px;">
-                <table class="table table-condensed table-striped table-bordered table-sm" id="tabletecnicoedit1">
-                    <thead class="thead-dark">
-                        <th>Cant.</th>
-                        <th>Producto</th>
-                        <th>Serie</th>
-                        <th>N° Serie Pro.</th>
-                        <th>N° Serie SIM.</th>
-                        <th>Tipo</th>
-                        <th>Estado</th>
-                        <th>Acci&oacute;n</th>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="col-md-12 table-resposive" style="max-height: 600px;">
-                <table class="table table-condensed table-striped table-bordered table-sm" id="tabletecnicoedit2">
-                    <thead class="thead-dark">
-                        <th>Cant.</th>
-                        <th>Producto</th>
-                        <th>Serie</th>
-                        <th>N° Serie Pro.</th>
-                        <th>N° Serie SIM.</th>
-                        <th>Tipo</th>
-                        <th>Estado</th>
-                        <th>Acci&oacute;n</th>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
+    <div class="col-md-4 col-12 mt-2">
+      <label>Bodega(Técnico)</label>
+      <?= htmlselect('bodegaedit2', 'bodegaedit2', 'personal', 'per_id', 'per_nombrecorto', '', '', 'where per_id <> 26', 'per_nombrecorto', 'cambioedittecnico(this.value,2)', '', 'si', 'no', 'no'); ?>
     </div>
-    <div class="row" style="margin-top:10px;">
-        <div class="col-md-6">
-            <label>Observaciones</label>
-            <textarea class="form-control" id="observacionedit"></textarea>
-        </div>
+
+    <!-- Sección Técnico A  -->
+    <div class="col-lg-6 col-md-12 col-12 mt-3">
+      <h3 class="box-title">Técnico A</h3>
+      <div class="table-responsive" style="max-height: 600px;">
+        <table class="table table-condensed table-striped table-bordered table-sm" id="tabletecnicoedit1">
+          <thead class="thead-dark">
+            <tr>
+              <th>Cant.</th>
+              <th>Producto</th>
+              <th>Serie</th>
+              <th>Tipo</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
-    <div class="row" style="margin-top:10px;">
-        <div class="col-md-12">
-            <button class="btn btn-sm btn-rounded btn-success" id="btnactualizaredit">Actualizar</button>
-            &nbsp;
-            <button class="btn btn-sm btn-rounded btn-danger" onclick="location.reload();">Cancelar</button>
-        </div>
+
+    <!-- Sección Técnico B  -->
+    <div class="col-lg-6 col-md-12 col-12 mt-3 mt-lg-3">
+      <h3 class="box-title">Técnico B</h3>
+      <!-- Corrige la clase a .table-responsive -->
+      <div class="table-responsive" style="max-height: 600px;">
+        <table class="table table-condensed table-striped table-bordered table-sm" id="tabletecnicoedit2">
+          <thead class="thead-dark">
+            <tr>
+              <th>Cant.</th>
+              <th>Producto</th>
+              <th>Serie</th>
+              <th>Tipo</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
+
+    <!-- Observaciones y Botones (en la parte inferior, col-12 para ocupar todo el ancho) -->
+    <div class="col-12 mt-3">
+      <label>Observaciones</label>
+      <textarea class="form-control" id="observacionedit"></textarea>
+    </div>
+
+    <div class="col-12 mt-3 text-center">
+      <button class="btn btn-sm btn-rounded btn-success" id="btnactualizaredit">Actualizar</button>
+      <button class="btn btn-sm btn-rounded btn-danger" onclick="location.reload();">Cancelar</button>
+    </div>
+  </div>
 </div>
+
 <script>
     let temp = [];
     let bod1 = 0;
@@ -518,113 +581,235 @@ $opt .= '</select>';
         })
     }
 
+    /**
+     * Genera la fila resumen de cada grupo (producto).
+     * @param {String} product - Nombre del producto.
+     * @param {Number} count - Cantidad de items.
+     * @param {String} serieDisplay - Serie a mostrar en la columna "Serie".
+     * @param {String} actionBtn - Botón de acción.
+     * @param {String} expandBtn - Botón de expansión (si aplica).
+     * @param {Number} idx - Índice del grupo.
+     */
+    function createSummaryRow(product, count, serieDisplay, actionBtn, expandBtn, idx) {
+        return `
+            <tr id="group_${idx}">
+                <td class="text-center">${count}</td>
+                <td>${product}</td>
+                <td>${serieDisplay}</td>
+                <td>Producto</td>
+                <td>${expandBtn} ${actionBtn}</td>
+            </tr>
+        `;
+    }
+
+// Función para generar el botón de expansión 
+    function createExpandButton(idx, direction) {
+        let colorClass = direction === 1 ? "btn-success" : "btn-danger"; // Verde para Técnico A, Rojo para Técnico B
+        return `
+            <button type="button" class="btn btn-sm ${colorClass} expand-btn w-100 mx-0.5"
+                    data-target="detail_${direction}_${idx}" 
+                    data-state="collapsed" 
+                    aria-label="Expandir detalles"
+                    title="Mostrar detalles">
+                <i class="fas fa-list"></i> <!-- Icono de lista -->
+            </button>`;
+    }
+
+    // Evento delegado para expandir/contraer filas de detalle
+    $(document).on('click', '.expand-btn', function () {
+        const target = $(this).data('target');
+        const detailRow = $('#' + target);
+        if (detailRow.is(':visible')) {
+            detailRow.slideUp();
+            $(this).html('<i class="fas fa-list"></i>').data('state', 'collapsed').attr('aria-label', 'Expandir detalles');
+        } else {
+            detailRow.slideDown();
+            $(this).html('<i class="fas fa-list-alt"></i>').data('state', 'expanded').attr('aria-label', 'Ocultar detalles');
+        }
+    });
+
+
+    // Función para generar la fila de detalle para productos con serie y más de un registro
+    function createDetailRow(idx, items, idtraspaso, direction) {
+        let rows = items.map(item => {
+            let btn = `
+                <button type="button" class="btn btn-sm btn-${direction === 1 ? 'success' : 'danger'} btn-circle"
+                        style="width:65%;color: white;"
+                        onclick="traspasoalbedit(${direction}, ${idx}, ${item.pro_id}, ${item.ser_id}, ${idtraspaso})"
+                        aria-label="Transferir">
+                    <i class="fas fa-long-arrow-alt-${direction === 1 ? 'right' : 'left'}"></i>
+                </button>`;
+            return `
+                <tr>
+                    <td>${item.ser_codigo || "Sin serie"}</td>
+                    <td>Producto</td>
+                    <td>${btn}</td>
+                </tr>
+            `;
+        }).join('');
+        
+        return `
+            <tr class="detail-row" id="detail_${direction}_${idx}" style="display:none;">
+                <td colspan="5">
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Serie</th>
+                                <th>Tipo</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        `;
+    }
+
+    
+    // Función para procesar los datos y generar la estructura de cada tabla
+    function procesarDatos(data, idtraspaso, direction) {
+        let groups = {};
+
+        // Agrupar productos por nombre
+        $.each(data, function(i, item) {
+            let prod = item.pro_nombre;
+            if (!groups[prod]) {
+                groups[prod] = [];
+            }
+            groups[prod].push(item);
+        });
+
+        // Ordenar productos en el orden especificado
+        let sortedGroups = Object.entries(groups).map(([product, items]) => ({
+            product: product,
+            items: items,
+            tiene_serie: items[0].tiene_serie, // "SI" o "NO"
+            count: items.length // Cantidad de artículos del mismo producto
+        })).sort((a, b) => {
+            // 1️⃣ Primero los productos con serie que tienen varios artículos (se desglosan)
+            if (a.tiene_serie === "SI" && a.count > 1) return -1;
+            if (b.tiene_serie === "SI" && b.count > 1) return 1;
+
+            // 2️⃣ productos con serie que solo tienen un artículo
+            if (a.tiene_serie === "SI" && a.count === 1) return -1;
+            if (b.tiene_serie === "SI" && b.count === 1) return 1;
+
+            // 3️⃣  productos sin serie
+            return 0;
+        });
+
+        let form = '';
+        let idx = 0;
+
+        sortedGroups.forEach(group => {
+            let product = group.product;
+            let items = group.items;
+            let count = group.count;
+            let first = items[0];
+
+            // Determinar el contenido de la columna "Serie"
+            let serieDisplay = first.tiene_serie === "NO" ? "Sin serie" : (count > 1 ? "-" : first.ser_codigo);
+
+            let expandBtn = "";
+            let actionBtn = "";
+
+            if (first.tiene_serie === "NO") {
+                // Para productos sin serie, solo se muestra el botón de traspaso
+                actionBtn = `
+                    <button type="button" class="btn btn-sm btn-${direction === 1 ? 'success' : 'danger'} btn-circle"
+                            style="width:65%; color: white;"
+                            onclick="traspasoalbedit(${direction}, ${idx}, ${first.pro_id}, ${first.ser_id}, ${idtraspaso})"
+                            aria-label="Transferir producto">
+                        <i class="fas fa-long-arrow-alt-${direction === 1 ? 'right' : 'left'}"></i>
+                    </button>`;
+            } else {
+                // Para productos con serie
+                if (count > 1) {
+                    // Si hay más de una serie, mostramos el botón de detalles (expandir)
+                    expandBtn = createExpandButton(idx, direction);
+                } else {
+                    // Si hay solo una serie, mostramos el botón de traspaso
+                    actionBtn = `
+                        <button type="button" class="btn btn-sm btn-${direction === 1 ? 'success' : 'danger'} btn-circle"
+                                style="width:65%; color: white;"
+                                onclick="traspasoalbedit(${direction}, ${idx}, ${first.pro_id}, ${first.ser_id}, ${idtraspaso})"
+                                aria-label="Transferir producto">
+                            <i class="fas fa-long-arrow-alt-${direction === 1 ? 'right' : 'left'}"></i>
+                        </button>`;
+                }
+            }
+
+            form += createSummaryRow(product, count, serieDisplay, actionBtn, expandBtn, idx);
+
+            // Si el producto tiene serie y hay más de uno, generamos la fila de detalle
+            if (first.tiene_serie === "SI" && count > 1) {
+                form += createDetailRow(idx, items, idtraspaso, direction);
+            }
+            idx++;
+        });
+
+        return form;
+    }
+
+    // Función para cargar los traspasos y generar las tablas
     function Editartraspaso(index, idtraspaso) {
         $('#formeditar').show();
         $('#valortras').val(idtraspaso);
         $('#listadodetraspasos').hide();
-        env = {
-            'idtraspaso': idtraspaso
-        };
-        var send = JSON.stringify(env);
+        let env = { 'idtraspaso': idtraspaso };
+        let send = JSON.stringify(env);
+
         $.ajax({
             url: 'operaciones.php',
             data: {
-                numero: '' + Math.floor(Math.random() * 9999999) + '',
+                numero: '' + Math.floor(Math.random() * 9999999),
                 operacion: 'getdettraspasos',
                 retornar: 'no',
                 envio: send
             },
             type: 'post',
             dataType: 'json',
-            beforeSend: function(respuesta) {
-
-            },
+            beforeSend: function() {},
             error: function(respuesta) {
                 console.log(respuesta);
             },
             success: function(respuesta) {
                 if (respuesta.tablauno.length > 0) {
-                    $('#tabletecnicoedit1 tbody').html('<tr><td colspan="10" align="center"><i class="fa fa-spinner fa-pulse fa-1x fa-fw"></i></td></tr>');
-                    $('#tabletecnicoedit2 tbody').html('<tr><td colspan="10" align="center"><i class="fa fa-spinner fa-pulse fa-1x fa-fw"></i></td></tr>');
-                    $('#bodegaedit').val(respuesta.usu_id_envia);
-                    $('#bodegaedit').attr('disabled', true);
+                    $('#tabletecnicoedit1 tbody, #tabletecnicoedit2 tbody').html(
+                        '<tr><td colspan="5" align="center"><i class="fa fa-spinner fa-pulse fa-1x fa-fw"></i></td></tr>'
+                    );
+
+                    $('#bodegaedit').val(respuesta.usu_id_envia).attr('disabled', true);
                     $('#bodegaedit2').val(respuesta.usu_id_recibe);
                     $('#dateedit').val(respuesta.tra_fecha);
                     $('#observacionedit').val(respuesta.tra_observacion);
 
-                    let form = '';
-                    $.each(respuesta.tablauno, function(i, item) {
-                        let estado = '';
-                        let trcolor = '';
-                        switch (item.ser_condicion) {
-                            case 'BUENO':
-                                trcolor = "";
-                                estado = "<td class='text-center'><span class='text-success'><i class='fa fa-check' aria-hidden='true'></i></span></td>";
-                                break;
-                            case 'MALO':
-                                trcolor = "danger";
-                                estado = "<td class='text-center'><span class='text-danger'><i class='fa fa-times' aria-hidden='true'></i></span></td>";
-                                break;
-                            case 'NO IDENTIFICADO':
-                                trcolor = "warning";
-                                estado = "<td class='text-center'><span class='text-warning'><i class='fa fa-exclamation' aria-hidden='true'></i></span></td>";
-                                break;
-                        }
+                    // Procesar datos para Técnico A
+                    let form1 = procesarDatos(respuesta.tablauno, idtraspaso, 1);
+                    $('#tabletecnicoedit1 tbody').html(form1);
 
-                        var btn = "<button type='button' class='btn btn-sm btn-success btn-circle' style='width:65%;color: white;' onclick='traspasoalbedit(1," + i + "," + item.pro_id + "," + item.ser_id + "," + idtraspaso + ")' id='btnpasaredit" + i + "'><i class='fas fa-long-arrow-alt-right'></i></button>";
-
-
-                        var txttieneserie = 'SI';
-
-                        form += "<tr style='color:black;' id='idedit_table1_" + i + "' class='" + trcolor + "'><td class='text-center'>1</td><td>" + item.pro_nombre + "</td><td>" + txttieneserie + "</td><td id='ser_" + i + "_1'>" + item.ser_codigo + "</td><td></td><td>Producto</td>" + estado + "<td>" + btn + "</td></tr>";
-                    });
-                    $('#tabletecnicoedit1 tbody').html(form);
-
-                    form = '';
-                    $.each(respuesta.tablados, function(i, item) {
-                        let estado = '';
-                        let trcolor = '';
-                        switch (item.ser_condicion) {
-                            case 'BUENO':
-                                trcolor = "";
-                                estado = "<td class='text-center'><span class='text-success'><i class='fa fa-check' aria-hidden='true'></i></span></td>";
-                                break;
-                            case 'MALO':
-                                trcolor = "danger";
-                                estado = "<td class='text-center'><span class='text-danger'><i class='fa fa-times' aria-hidden='true'></i></span></td>";
-                                break;
-                            case 'NO IDENTIFICADO':
-                                trcolor = "warning";
-                                estado = "<td class='text-center'><span class='text-warning'><i class='fa fa-exclamation' aria-hidden='true'></i></span></td>";
-                                break;
-                        }
-
-                        var btn = "<button type='button' class='btn btn-sm btn-danger btn-circle' style='width:65%;color: white;' onclick='traspasoalbedit(2," + i + "," + item.pro_id + "," + item.ser_id + "," + idtraspaso + ")' id='btnpasaredit" + i + "'><i class='fas fa-long-arrow-alt-left'></i></button>";
-
-                        var txttieneserie = 'SI';
-
-                        form += "<tr style='color:black;' id='idedit_table2_" + i + "' class='" + trcolor + "'><td class='text-center'>1</td><td>" + item.pro_nombre + "</td><td>" + txttieneserie + "</td><td id='ser_" + i + "_2'>" + item.ser_codigo + "</td><td></td><td>Producto</td>" + estado + "<td>" + btn + "</td></tr>";
-                    });
-                    $('#tabletecnicoedit2 tbody').html(form);
+                    // Procesar datos para Técnico B
+                    let form2 = procesarDatos(respuesta.tablados, idtraspaso, 2);
+                    $('#tabletecnicoedit2 tbody').html(form2);
                 } else {
-                    $('#tabletecnicoedit1 tbody').html('<tr><td colspan="10" align="center">No hay series asociadas</td></tr>');
-                    $('#tabletecnicoedit2 tbody').html('<tr><td colspan="10" align="center">No hay series asociadas</td></tr>');
+                    $('#tabletecnicoedit1 tbody, #tabletecnicoedit2 tbody').html(
+                        '<tr><td colspan="5" align="center">No hay series asociadas</td></tr>'
+                    );
                 }
             }
         });
     }
 
     function traspasoalbedit(opciontecnico, index, idproducto, idserie, idtraspaso) {
-
-        var tecotro = $('#bodegaedit2').val();
-        var bodega1 = $('#bodegaedit').val();
-
-        if (tecotro == '') {
-            alert('debes seleccionar una opcion contraria para el traspaso');
+        let tecotro = $('#bodegaedit2').val();
+        let bodega1 = $('#bodegaedit').val();
+        if (tecotro === '') {
+            alert('Debes seleccionar una opción contraria para el traspaso');
         } else {
-
-            var bodega2 = tecotro;
-            var datosj = {
+            let datosj = {
                 'bodega2': tecotro,
                 'opciontecnico': opciontecnico,
                 'index': index,
@@ -633,36 +818,26 @@ $opt .= '</select>';
                 'idtraspaso': idtraspaso,
                 'bodega1': bodega1
             };
-            var sendj = JSON.stringify(datosj);
-
+            let sendj = JSON.stringify(datosj);
             $.ajax({
                 url: 'operaciones.php',
                 data: {
-                    numero: '' + Math.floor(Math.random() * 9999999) + '',
+                    numero: '' + Math.floor(Math.random() * 9999999),
                     operacion: 'edittraspasoser',
                     retornar: 'no',
                     envio: sendj
                 },
                 type: 'post',
                 dataType: 'json',
-                beforeSend: function(respuesta) {
-
-                },
+                beforeSend: function() {},
                 error: function(respuesta) {
                     console.log(respuesta);
-
                 },
                 success: function(respuesta) {
-                    if (respuesta.logo == 'success') {
+                    if (respuesta.logo === 'success') {
                         toastr.success(respuesta.mensaje);
-                        $('#idedit_table' + opciontecnico + '_' + index + '').remove();
+                        // Se refresca la tabla actualizando el detalle
                         Editartraspaso(index, idtraspaso);
-                        /*if(opciontecnico==1){
-                           productosxternico(tecotro,2);
-
-                        }else{
-                           productosxternico(bodega1,1);
-                        }*/
                     } else {
                         toastr.error(respuesta.mensaje);
                     }
@@ -936,446 +1111,685 @@ $opt .= '</select>';
         location.reload();
     }
 
-    function buscarProducto() {
-        series = {};
-        idpro = $("#producto").val();
-        var randomNo = Math.floor(Math.random() * 9999999);
-        if ($.fn.DataTable.isDataTable('#tblistcod table')) {
-            $('#tblistcod table').DataTable().destroy();
-        }
-        temp = []
-        $.get("operaciones.php", {
-            numero: '' + randomNo + '',
-            operacion: 'getStockProducto',
-            producto: idpro,
-            retornar: 'no'
-        }, function(data) {
-            var datos = $.parseJSON(data);
-            if (datos.length > 0) {
-
-                $("#disponibles, input[name='disponibles']").val(datos[0]["stock"]);
-                if (parseInt(datos[0]['valida']) == 1) {
-                    $("input[name='cantidad']").attr("disabled", true);
-                    $("#btnaddcan").attr("disabled", true);
-                    /* codigos = datos["series"];*/
-                    fs = "";
-                    $.each(datos, function(index, valor) {
-                        var dis = '';
-                        $.each(temp, function(i, item) {
-                            if (item.id == valor.idserie) {
-                                dis = 'checked';
-                            }
-                        });
-                        fs += "<tr><td id='ser_" + valor.idserie + "_" + idpro + "'>" + (valor.codigoserie == undefined ? 'Sin Serie' : valor.codigoserie) + "</td><td width=50 class='text-center'><input type='checkbox' class='cla_" + idpro + "' id='cod" + valor.idserie + "' onclick='agregarProaTras(" + valor.idserie + "," + idpro + ")' " + dis + "></td></tr>";
-                    });
-                    $("#tblistcod table tbody").html(fs);
-                    $('#tblistcod table').DataTable({
-                        "language": {
-                            url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
-                        },
-                        "paging": false,
-                        "lengthChange": true,
-                        /*"lengthMenu": [[20,-1], [20,"Todos"]],
-                        "pageLength":20,*/
-                        "searching": true,
-                        "ordering": true,
-                        "info": false,
-                        "autoWidth": false
-                    });
-                    $("#tblistcod").show();
-                    $("#tablatem").show();
-                } else {
-
-                    $.each(datos, function(index, valor) {
-                        temp.push({
-                            'id': valor.idserie,
-                            'idpro': $("#producto").val()
-                        })
-                    });
-
-                    $("input[name='cantidad']").attr("disabled", false);
-                    $("#btnaddcan").attr("disabled", false);
-                    $("#tblistcod").hide();
-                    $('#formeditar').hide();
-                    //$("#disponibles").val(datos.length);
-                    $("#cantidad").val(0);
-                    $("#tablatem").show();
-                }
-            } else {
-                $("input[name='cantidad']").attr("disabled", false);
-                $("#btnaddcan").attr("disabled", false);
-                $("#tblistcod").hide();
-                $('#formeditar').hide();
-                $("#disponibles").val(0);
-            }
-
-        });
-    }detalletraspaso = [];
-    temptras = [];
-    // var seriesconcatenadas = []; // SE elimino la variable global seriesconcatenadas
-
-    function agregarProaTras(index, idprod) {
-        console.log("agregarProaTras - START");
-        console.log("agregarProaTras - detalletraspaso before:", JSON.stringify(detalletraspaso));
-        console.log("agregarProaTras - index:", index, "idprod:", idprod);
-
-        let temp2 = [];
-
-        if ($.fn.DataTable.isDataTable('#tb_prodoc')) {
-            $('#tb_prodoc').DataTable().destroy();
-        }
-        if ($("#cod" + index + "").is(':checked')) {
-            console.log("agregarProaTras - Checkbox is checked");
-
-            temp.push({
-                'id': index,
-                'idpro': idprod
-            });
-            //console.log("agregar");
-            idpro = $("#producto").val();
-            nombrepro = $("#producto option:selected").text();
-            var serieText = $("#ser_" + index + '_' + idprod).text(); // Obtiene el texto de la serie
-            console.log("agregarProaTras - serieText:", serieText);
-
-
-            var productoEnDetalle = detalletraspaso.find(item => item.idproducto === idprod);
-            console.log("agregarProaTras - productoEnDetalle found:", productoEnDetalle);
-
-            if (productoEnDetalle) {
-                console.log("agregarProaTras - Producto already in detalletraspaso, updating series and quantity");
-                productoEnDetalle.series.push({
-                    'serie': serieText,
-                    'ser_id': index
-                });
-                productoEnDetalle.cantidad++;
-            } else {
-                console.log("agregarProaTras - Producto NOT found in detalletraspaso, adding new product");
-                detalletraspaso.push({
-                    'idproducto': idprod,
-                    'cantidad': 1,
-                    'nombrepro': nombrepro,
-                    'series': [{ 'serie': serieText, 'ser_id': index }],
-                    'tieneserie': "SI",
-                });
-            }
-
-
-        } else {
-            console.log("agregarProaTras - Checkbox is NOT checked (deselected)");
-            var serieABorrar = $("#ser_" + index + '_' + idprod).text();
-            console.log("agregarProaTras - serieABorrar:", serieABorrar);
-            $.each(detalletraspaso, function(i, item) {
-                if (item.idproducto == idprod) {
-                    console.log("agregarProaTras - Found product in detalletraspaso to remove serie from");
-                    item.series = item.series.filter(s => s.serie !== serieABorrar);
-                    item.cantidad--;
-                    console.log("agregarProaTras - cantidad after decrement:", item.cantidad);
-
-                    if (item.cantidad <= 0) {
-                        console.log("agregarProaTras - cantidad <= 0, removing product from detalletraspaso");
-                        detalletraspaso.splice(i, 1);
-                    }
-                    return false;
-                }
-            });
-
-            $.each(temp, function(i, item) {
-                if (index != item.id) {
-                    temp2.push({
-                        'id': item.id,
-                        'idpro': item.idpro
-                    });
-                }
-            });
-
-            temp = temp2;
-        }
-
-        dpro = "";
-        $.each(detalletraspaso, function(index, valor) {
-            var seriesconca = '';
-            seriesconca = valor.series.map(s => s.serie).join(', ');
-
-            dpro += "<tr id='fila" + valor.idproducto + "'><td>" + valor.cantidad + "</td><td>" + valor.nombrepro + "</td><td>" + seriesconca + "</td><td class='text-center'><button type='button' class='btn btn-danger bnt-sm btn-circle' onclick='quitarDetalle(\"" + valor.idproducto + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
-        });
-        $("#tb_prodoc tbody").html(dpro); 
-        $('#tb_prodoc').DataTable({
-            "language": {
-                url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
-            },
-            "paging": false,
-            "lengthChange": true,
-            /*"lengthMenu": [[20,-1], [20,"Todos"]],
-            "pageLength":20,*/
-            "searching": true,
-            "ordering": true,
-            "info": false,
-            "autoWidth": false
-        });
-        console.log("agregarProaTras - detalletraspaso after:", JSON.stringify(detalletraspaso));
-        console.log("agregarProaTras - END");
-        updateGuardarButtonState(); // Actualiza el estado del botón de guardar
+    function mostrarTablaTemporal() {
+        $("#tablatem").removeClass("oculto").show();
+    }
+    function ocultarTablaTemporal() {
+        $("#tablatem").addClass("oculto").hide();
     }
 
-
-
-    function agregaratrapaso(indice = null, id = 0, idgps = 0, _serie = '') {
-        console.log("agregaratrapaso - START");
-        console.log("agregaratrapaso - detalletraspaso before:", JSON.stringify(detalletraspaso));
-        console.log("agregaratrapaso - indice:", indice, "id:", id, "idgps:", idgps, "_serie:", _serie);
-
-        if ($.fn.DataTable.isDataTable('#tb_prodoc')) {
-            $('#tb_prodoc').DataTable().destroy();
+    let productosConSerie = [];
+    // Función que renderiza la tabla de series a partir de una lista de productos
+    function renderizarTabla(lista,idpro) {
+        const tbody = $("#tablaSeriesBody");
+        tbody.empty();
+        
+        if (lista.length === 0) {
+            tbody.append("<tr><td colspan='2' class='text-center'>No se encontraron resultados</td></tr>");
+            return;
         }
-        if (opcionTraspaso == 1) {
-            console.log("agregaratrapaso - opcionTraspaso == 1");
-            // codigo=Math.floor(Math.random()*99999);
-            cantidad = parseInt($("input[name='cantidad']").val());
-            maximo = parseInt($("#disponibles").val());
-            if (cantidad > maximo) {
-                alert("Cantidad a traspasar supera el máximo disponible");
-                return;
-            } else {
-                idpro = $("#producto").val();
-                nombrepro = $("#producto option:selected").text();
-            }
+        
+        lista.forEach(producto => {
+            let fila = `
+                <tr id="fila_${producto.idserie}">
+                    <td>${producto.codigoserie}</td>
+                    <td>
+                        <button type="button" class="btn btn-success w-100" onclick="agregarProaTras(${producto.idserie}, ${idpro}, '${producto.codigoserie}')">
+                            <i class="fas fa-long-arrow-alt-right"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(fila);
+        });
+    }
 
-            //series[indice] = ({
-            //    "id": indice,
-            //    "serie": codigos[indice]
-            //});
+    // Función de filtrado en vivo: se llama cada vez que se escribe en el input de búsqueda
+    function filtrarEnVivo() {
+        let texto = $("#serieBuscar").val().trim().toLowerCase();
+        console.log(texto);
+        // Obtén el id del producto seleccionado
+        let idpro = $("#producto").val();
+        console.log(idpro);
+        // Si el input está vacío, se muestran todos los productos con serie
+        if (!texto) {
+            renderizarTabla(productosConSerie, idpro);
+            return;
+        }
+        
+        // Filtrar los productos cuyo campo 'codigoserie' incluya el texto
+        let filtrados = productosConSerie.filter(item =>
+            item.codigoserie.toLowerCase().includes(texto)
+        );
+        console.log(filtrados);
+        renderizarTabla(filtrados, idpro);
+    }
 
-            detalletraspaso[idpro] = ({
-                "cantidad": cantidad,
-                "tieneserie": (Object.keys(series).length > 0 ? "SI" : "NO"),
-                "temp": temp,
-                "idpro": idpro,
-                "producto": nombrepro,
-                "series": [], // Inicializa series como array vacio para nuevos productos
-                'ttraspaso': opcionTraspaso
-            });
+    let productosCache = null; // Aquí se guardará la respuesta del servidor 
+    let traspasados = []; // Aquí se guardarán los productos ya traspasados
 
-            // $("#tb_prodoc tbody").append("<tr id='fila"+codigo+"'><td>"+cantidad+"</td><td>"+nombrepro+"</td><td class='text-center'><button type='button' class='btn btn-danger btn-circle' onclick='quitarDetalle(\""+codigo+"\")'><i class='fa fa-trash-o' aria-hidden='true'></i></button></td></tr>");
-            let contador = 0;
-            dpro = "";
-            Object.entries(detalletraspaso).forEach(([idpro, detalle]) => {
-                // var seriesconca = ''; // Eliminamos esta variable local redundante
-                // $.each(seriesconcatenadas, function(index1, valor1) { // Ya no usamos seriesconcatenadas global
-                //     if (detalle.idproducto == valor1.idporducto) {
-                //         seriesconca += valor1.serie + ',';
-                //     }
-                // })
-                seriesconca = detalle.series.map(s => s.serie).join(', '); 
+    function buscarProducto() {
+        let idpro = $("#producto").val();
 
-                dpro += "<tr id='fila" + contador + "'><td align=\"center\">" + detalle.cantidad + "</td><td>" + detalle.producto + "</td><td id='clases_" + contador + "'>" + (seriesconca == '' ? '<span class="badge badge-danger">N/A</span>' : seriesconca) + "</td><td class='text-center'><button type='button' class='btn btn-sm btn-danger btn-circle' onclick='quitarDetalle(\"" + contador + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
-                contador++;
-            });
+         // Verifica si el botón "Traspaso entre técnicos" ha sido presionado
+        let btnTraspaso = $("#btntraspasotecnico");
+        let bodega = $("#bodega").val(); 
 
+        // Si el botón no ha sido presionado Y la bodega de destino NO está vacía, usar bodega 26 que es la bodega principal
+        if (!btnTraspaso.hasClass("active")) {
+            
+            bodega = 26;
+        } 
+        
 
-            $("#tb_prodoc tbody").html(dpro);
+        if ($.fn.DataTable.isDataTable('#tblistcod')) {
+            $('#tblistcod').DataTable().destroy();
+        }
+        if ($.fn.DataTable.isDataTable('#tblistcod_sin_serie')) {
+            $('#tblistcod_sin_serie').DataTable().destroy();
+        }   
 
-            $("#producto").val("");
-            $("input[name='cantidad']").val("");
-            $("#disponibles, input[name='disponibles']").val("");
-        } else {
-            console.log("agregaratrapaso - opcionTraspaso != 1 (KIT GPS)");
-            let idpro = idgps;
-            var randomNo = Math.floor(Math.random() * 9999999);
-            let asyn = $.get("operaciones.php", {
+        // Si ya tenemos cache para este producto, usamos esa información
+        if (productosCache && productosCache.idpro === idpro) {
+            // Filtrar los productos excluyendo los que ya están en 'traspasados'
+            let datosFiltrados = productosCache.data.filter(producto =>
+                traspasados.indexOf(producto.codigoserie) === -1
+            );
+            productosConSerie = datosFiltrados.slice(); // Guardar copia de los productos con serie para filtrado en vivo
+            renderizarTabla(datosFiltrados, idpro);
+            $("#tblistcod").show();
+            $("#tblistcod_sin_serie").hide();
+        }else {
+            let randomNo = Math.floor(Math.random() * 9999999);
+            $.get("operaciones.php", {
                 numero: '' + randomNo + '',
                 operacion: 'getStockProducto',
+                bodega : bodega,
                 producto: idpro,
                 retornar: 'no'
-            }, function(data) {
-                //console.log(data);
-                datos = $.parseJSON(data);
-                if (parseInt(datos.tieneserie) == 1) {
-                    codigos = datos["series"];
                 }
-                $.each(codigos, function(i, item) {
-                    if (item == _serie) {
-                        series[i] = ({
-                            "id": i,
-                            "serie": codigos[i]
+                , function(data) {
+            
+                let datos = $.parseJSON(data);
+                // Guarda en caché la respuesta
+                productosCache = { idpro: idpro, data: datos };
+                // Filtra excluyendo los códigos ya traspasados
+                let datosFiltrados = datos.filter(producto =>
+                    traspasados.indexOf(producto.codigoserie) === -1
+                );
+                //tabla de productos con serie
+                let tabla = $("#tblistcod tbody");
+                tabla.empty(); // Limpiar tabla antes de agregar nuevos datos
+                //tabla de productos sin serie
+                let tablaSinSerie = $("#tblistcod_sin_serie tbody");
+                tablaSinSerie.empty();
+
+                if (datos.length > 0) {
+                    let stockDisponible = parseInt(datos[0]["stock"]) || 0;   
+                    let requiereSerie = parseInt(datos[0]['valida']) === 1;
+                    $("#disponibles").val(stockDisponible);
+
+
+                    if (requiereSerie) {
+
+                        datosFiltrados.forEach((producto) => {
+                            temp.push({
+                                id: producto.idserie,
+                                idpro: idpro,
+                                codigoserie: producto.codigoserie
+                            });
                         });
+                        productosConSerie = datosFiltrados.slice(); // Guardar copia de los productos con serie para filtrado en vivo
+                        // Renderiza la tabla completa (todos los datos)
+                        renderizarTabla(datosFiltrados,idpro);
+
+                        $("#tblistcod").show();
+                        $("#tblistcod_sin_serie").hide();
+
+                    } else {
+                        let fila = `
+                            <tr>
+                                <td class="text-center"><strong>Producto sin serie</strong></td>
+                                <td>
+                                    <input type="number" id="cantidad" class="form-control" min="1" max="${stockDisponible}" value="1"
+                                        oninput="validarCantidad(this, ${stockDisponible})">
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-success" onclick="agregarSinSerie(${idpro})">➕ Agregar</button>
+                                </td>
+                            </tr>
+                        `;
+
+                        tablaSinSerie.append(fila);
+
+                        $("#tblistcod_sin_serie").show();
+                        $("#tblistcod").hide(); // Ocultar tabla de productos con serie
                     }
-                });
-                //series[indice]=({"id":indice,"serie":codigos[indice]});
-                _serie = '' + _serie;
-                detalletraspaso['KIT' + id] = ({
-                    "cantidad": 1,
-                    "tieneserie": (Object.keys(series).length > 0 ? "SI" : "NO"),
-                    "idpro": id,
-                    "producto": 'KIT ' + id,
-                    "series": series,
-                    'ttraspaso': opcionTraspaso
-                });
-
-                dpro = "";
-                $.each(detalletraspaso, function(index, valor) {
-                    dpro += "<tr id='fila" + index + "'><td>" + valor.cantidad + "</td><td>" + valor.producto + "</td><td class='text-center'><button type='button' class='btn btn-sm btn-danger btn-circle' onclick='quitarDetalle(\"" + index + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
-                });
-                $("#tb_prodoc tbody").html(dpro);
-            });
-        }
-        $('#tb_prodoc').DataTable({
-            "language": {
-                url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
-            },
-            "paging": false,
-            "lengthChange": true,
-            /*"lengthMenu": [[20,-1], [20,"Todos"]],
-            "pageLength":20,*/
-            "searching": true,
-            "ordering": true,
-            "info": false,
-            "autoWidth": false
-        });
-        console.log("agregaratrapaso - detalletraspaso after:", JSON.stringify(detalletraspaso));
-        console.log("agregaratrapaso - END");
-        updateGuardarButtonState();
-    }
-
-    function quitarDetalle(codigo) {
-            console.log("quitarDetalle - START");
-            console.log("quitarDetalle - codigo:", codigo, typeof codigo);
-
-            // 'codigo' a número usando parseInt()
-            codigo = parseInt(codigo);
-
-            console.log("quitarDetalle - codigo (after parseInt):", codigo, typeof codigo); // Log para verificar después de la conversión
-            console.log("quitarDetalle - detalletraspaso before:", JSON.stringify(detalletraspaso));
-
-            let temp2 = [];
-            $.each(temp, function(i, item) {
-                if (item.idpro != codigo) {
-                    temp2.push({
-                        'id': item.id,
-                        'idpro': item.idpro
-                    });
                 } else {
-                    $('#cod' + item.id).prop('checked', false);
+                    tabla.append(`
+                        <tr>
+                            <td colspan="3" class="text-center">No hay stock disponible</td>
+                        </tr>
+                    `);
+                    tablaSinSerie.append(`
+                        <tr>
+                            <td colspan="3" class="text-center">No hay stock disponible</td>
+                        </tr>
+                    `);
                 }
             });
-
-            temp = temp2;
-            console.log("quitarDetalle - temp after update:", temp);
-
-            // Elimina el producto de detalletraspaso directamente por idproducto
-            detalletraspaso = detalletraspaso.filter(item => {
-                console.log("quitarDetalle - filter item.idproducto:", item.idproducto, typeof item.idproducto, "codigo:", codigo, typeof codigo);
-                return item.idproducto !== codigo; // Ahora 'codigo' es número y 'item.idproducto' también
-            });
-            console.log("quitarDetalle - detalletraspaso after filter:", JSON.stringify(detalletraspaso));
-            actualizarTablaDetalle(); // Re-renderiza la tabla para reflejar los cambios
-            console.log("quitarDetalle - END");
-            updateGuardarButtonState(); // Actualiza el estado del botón de guardar
-    }
-
-    function actualizarTablaDetalle() {
-        console.log("actualizarTablaDetalle - START");
-        console.log("actualizarTablaDetalle - detalletraspaso before:", JSON.stringify(detalletraspaso));
-        if ($.fn.DataTable.isDataTable('#tb_prodoc')) {
-            $('#tb_prodoc').DataTable().destroy();
         }
-        dpro = "";
-        $.each(detalletraspaso, function(index, valor) {
-            var seriesconca = '';
-            seriesconca = valor.series.map(s => s.serie).join(', ');
-
-            dpro += "<tr id='fila" + valor.idproducto + "'><td>" + valor.cantidad + "</td><td>" + valor.nombrepro + "</td><td>" + seriesconca + "</td><td class='text-center'><button type='button' class='btn btn-danger bnt-sm btn-circle' onclick='quitarDetalle(\"" + valor.idproducto + "\")'><i class='fa fa-trash' aria-hidden='true'></i></button></td></tr>";
-        });
-        $("#tb_prodoc tbody").html(dpro); 
-        $('#tb_prodoc').DataTable({
-            "language": {
-                url: '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'
-            },
-            "paging": false,
-            "lengthChange": true,
-            /*"lengthMenu": [[20,-1], [20,"Todos"]],
-            "pageLength":20,*/
-            "searching": true,
-            "ordering": true,
-            "info": false,
-            "autoWidth": false
-        });
-        console.log("actualizarTablaDetalle - detalletraspaso after:", JSON.stringify(detalletraspaso));
-        console.log("actualizarTablaDetalle - END");
-        updateGuardarButtonState(); // Actualiza el estado del botón de guardar
     }
 
 
-    function guardarTrapaso() {
-        console.log("guardarTrapaso - START");
-        console.log("guardarTrapaso - detalletraspaso:", JSON.stringify(detalletraspaso));
-        dataTras = {};
-        if ($("#bodega").val() != "") {
-            dataTras["usuario"] = <?= $_SESSION['cloux_new'] ?>;
-            dataTras["fecha"] = convertDateFormat($("input[name='fecha']").val());
-            dataTras["bodega"] = $("#bodega").val();
-            dataTras["productos"] = temp;
-            dataTras["prods"] = []; // Inicializa prods como un array vacio
-            console.log("guardarTrapaso - detalletraspaso before prods processing:", JSON.stringify(detalletraspaso));
+    // Validar la cantidad ingresada por el usuario para productos sin serie 
+    function validarCantidad(input, max) {
+        if (input.value < 1) {
+            input.value = 1;
+        }
+        if (input.value >= max) {
+            input.value = max;
+        }
+    }
 
-            detalletraspaso.forEach(function(productoDetalle) {
-                let prodData = {
-                    idproducto: productoDetalle.idproducto,
-                    cantidad: productoDetalle.cantidad,
-                    tieneserie: productoDetalle.tieneserie,
-                    seriesconcatenadas: productoDetalle.series.map(s => ({ // <-- Crea 'seriesconcatenadas' AHORA ya que se necesita para enviar al backend (antes se creaba pero no se usaba)
-                        ser_id: s.ser_id,       // <-- Incluye 'ser_id'
-                        idporducto: productoDetalle.idproducto, // <-- Incluye 'idporducto'
-                        serie: s.serie         // <-- Incluye 'serie'
-                    }))
-                };
-                dataTras["prods"].push(prodData);
+
+
+    function actualizarTablaTraspaso() {
+    // Agrupar ítems por producto
+        let groups = agruparDetalleTraspaso();
+        let groupArray = transformarGrupos(groups);
+        
+        // Ordenar grupos 
+        groupArray.sort(ordenarGrupos);
+        
+        // Determinar si se debe mostrar la columna tracking
+        let hasTrackingCode = detalletraspaso.some(it => it.idtracking == 2);
+        
+        let dpro = "";
+        let idx = 0;
+        groupArray.forEach(group => {
+            if (group.tieneSerie === "SI") {
+                dpro += construirFilaConSerie(group, idx, hasTrackingCode);
+            } else {
+                dpro += construirFilaSinSerie(group, idx);
+            }
+            idx++;
+        });
+        
+        $("#tb_prodoc tbody").html(dpro);
+        asignarEventoExpand();
+    }
+
+    function agruparDetalleTraspaso() {
+        let groups = {};
+        detalletraspaso.forEach(item => {
+            let key = item.nombre; // se agrupa por nombre
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+        });
+        return groups;
+    }
+
+    function transformarGrupos(groups) {
+        return Object.entries(groups).map(([product, items]) => {
+            // Si el primer ítem tiene codigoserie no vacía se considera que tiene serie
+            let tieneSerie = (items[0].codigoserie && items[0].codigoserie.trim() !== "") ? "SI" : "NO";
+            let totalQuantity = items.reduce((sum, item) => sum + (item.cantidad || 1), 0);
+            return { product, items, count: items.length, totalQuantity, tieneSerie };
+        });
+    }
+
+    function ordenarGrupos(a, b) {
+        if (a.tieneSerie === "SI" && a.count > 1 && !(b.tieneSerie === "SI" && b.count > 1)) return -1;
+        if (b.tieneSerie === "SI" && b.count > 1 && !(a.tieneSerie === "SI" && a.count > 1)) return 1;
+        if (a.tieneSerie === "SI" && a.count === 1 && b.tieneSerie === "NO") return -1;
+        if (b.tieneSerie === "SI" && b.count === 1 && a.tieneSerie === "NO") return 1;
+        return 0;
+    }
+
+    function construirFilaConSerie(group, idx, hasTrackingCode) {
+        let product = group.product,
+            items = group.items,
+            count = group.count,
+            totalQuantity = group.totalQuantity;
+        let first = items[0];
+        let serieDisplay = (count > 1) ? "-" : (first.codigoserie || "Sin serie");
+        let row = "";
+        
+        if (count > 1) {
+            // Si hay más de una serie, se muestra un botón de expansión
+            let expandBtn = createExpandButton(idx, 2); // 2 para color rojo danger
+            row += `
+                <tr id="group_${idx}">
+                    <td class="text-center">${totalQuantity}</td>
+                    <td>${product}</td>
+                    <td>${serieDisplay}</td>
+                    <td>${expandBtn}</td>
+                </tr>`;
+            // Fila de detalle con cada ítem y su botón de eliminar
+            let detailId = "detail_2_" + idx;
+            row += `<tr class="detail-row" id="${detailId}" style="display:none;">
+                        <td colspan="4">
+                            <table class="table table-sm table-bordered">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>N° Serie</th>
+                                        <th>Cantidad</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+            items.forEach(item => {
+                row += `
+                    <tr>
+                        <td>${item.codigoserie || "Sin serie"}</td>
+                        <td class="text-center">${item.cantidad || 1}</td>
+                        <td class="text-center">
+                            <button class="btn btn-danger btn-sm w-100 mx-0.5" 
+                                    onclick="eliminarFila('${item.idproducto}', '${item.codigoserie}', '${item.id}')">
+                                    <i class="fas fa-long-arrow-alt-left"></i>️
+                            </button>                        
+                        </td>
+                    </tr>`;
             });
-
-
-            console.log("guardarTrapaso - dataTras.prods:", JSON.stringify(dataTras.prods));
-
-
-            dataTras["observaciones"] = $("textarea[name='observaciones']").val();
+            row += `
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>`;
         } else {
-            Swal.fire(
-                'Error',
-                'Debes seleccionar un t\u00E9cnico',
-                'error'
-            );
+            // Solo un ítem: se muestra el botón de eliminar en la fila resumen
+            let actionBtn = `<button class="btn btn-danger btn-sm w-100 mx-0.5" onclick="eliminarFila('${first.idproducto}', '${first.codigoserie}', '${first.id}')">
+                                <i class="fas fa-long-arrow-alt-left"></i>️
+                            </button>`;
+            row += `
+                <tr id="group_${idx}">
+                    <td class="text-center">${totalQuantity}</td>
+                    <td>${product}</td>
+                    <td>${serieDisplay}</td>
+                    <td>${actionBtn}</td>
+                </tr>`;
+        }
+        return row;
+    }
+
+    function construirFilaSinSerie(group, idx) {
+        let product = group.product,
+            totalQuantity = group.totalQuantity,
+            first = group.items[0];
+        console.log("first", first);
+        console.log("first idproducto", first.idproducto);
+        let actionBtn = `<button class="btn btn-danger btn-sm w-100 mx-0.5" onclick="eliminarFilaSinSerie('${first.idproducto}')">
+                            <i class="fas fa-long-arrow-alt-left"></i>️   
+                        </button>`;
+        return `
+            <tr id="group_${idx}">
+                <td class="text-center">${totalQuantity}</td>
+                <td>${product}</td>
+                <td>SIN SERIE</td>
+                <td>${actionBtn}</td>
+            </tr>`;
+    }
+
+    function asignarEventoExpand() {
+        $(".expand-btn").off("click").on("click", function () {
+            const target = $(this).data('target');
+            const detailRow = $('#' + target);
+            if (detailRow.is(':visible')) {
+                detailRow.slideUp();
+                $(this).html('<i class="fas fa-list"></i>').data('state', 'collapsed').attr('aria-label', 'Expandir detalles');
+            } else {
+                detailRow.slideDown();
+                $(this).html('<i class="fas fa-list-alt"></i>').data('state', 'expanded').attr('aria-label', 'Ocultar detalles');
+            }
+        });
+    }
+
+    detalletraspaso = [];
+    temptras = [];
+    var seriesconcatenadas = [];
+
+    function agregarProaTras(index, idpro, codigoserie) {
+        console.log("Llamada a agregarProaTras:", { index, idpro, codigoserie });
+        console.log("Contenido de temp antes de buscar:", temp);
+        
+        // Se busca el producto en temp usando idpro y codigoserie
+        let producto = temp.find(item => String(item.idpro) === String(idpro) && item.codigoserie === codigoserie);
+        console.log("Producto encontrado:", producto);
+
+        if (detalletraspaso.some(item => item.idproducto === producto.idpro && item.codigoserie === producto.codigoserie)) {
+            alert("⚠️ Este número de serie ya fue agregado al traspaso.");
             return;
         }
 
-        json = JSON.stringify(dataTras);
-        console.log("guardarTrapaso - json to send:", json);
+        // Obtener el nombre del producto desde el select
+        let nombreProducto = $("#producto option:selected").text() || "Producto desconocido";
+        console.log("Nombre del producto seleccionado:", nombreProducto);
+        
+        detalletraspaso.push({
+            idproducto: producto.idpro, 
+            codigoserie: producto.codigoserie,
+            nombre: nombreProducto
+        });
+        console.log("detalletraspaso actualizado:", detalletraspaso);
+        
+
+        // Agregar en seriesconcatenadas (si aún no está)
+        if (!Array.isArray(seriesconcatenadas)) {
+            seriesconcatenadas = [];
+        }
+        if (!seriesconcatenadas.some(item => item.idproducto === idpro && item.serie === codigoserie)) {
+            seriesconcatenadas.push({
+                idproducto: idpro,
+                serie: codigoserie,
+                ser_id: producto.id  
+            });
+        }
+        console.log("seriesconcatenadas actualizado:", seriesconcatenadas);
+
+        // Agregar la fila en la tabla temporal (derecha)
+        $("#tb_prodoc tbody").append(`
+            <tr id="fila_temporal_${producto.idpro}_${producto.codigoserie}">
+                <td class="text-center">1</td>
+                <td>${nombreProducto}</td>
+                <td>${producto.codigoserie}</td>
+                <td class="text-center">
+                    <button class="btn btn-danger btn-sm w-100 mx-0.5" onclick="eliminarFila('${producto.idpro}', '${producto.codigoserie}', '${producto.id}')">
+                        <i class="fas fa-long-arrow-alt-left"></i>️
+                    </button>
+                </td>
+            </tr>
+        `);
+        console.log("Fila temporal agregada para:", producto);
+
+        // Remover la fila correspondiente en la tabla izquierda (de productos con serie)
+        $("#fila_" + producto.id).remove();
+
+        // Agrega el código de serie al array traspasados
+        traspasados.push(producto.codigoserie);
+        console.log("traspasados actualizado:", traspasados);
+        console.log("productosCache actualizado:", productosCache);
+
+
+        mostrarTablaTemporal();
+        actualizarTablaTraspaso();
+    }
+
+
+    
+    function eliminarFila(idpro, codigoserie, idserie) {
+        console.log("🗑️ Eliminando producto con ID:", idpro, "y Código de serie:", codigoserie);
+
+        // Quitar el producto del arreglo detalletraspaso (comparando como cadenas)
+        detalletraspaso = detalletraspaso.filter(item => 
+            !(String(item.idproducto) === String(idpro) && item.codigoserie === codigoserie)
+        );
+
+        // Quitar también de seriesconcatenadas (usando la clave correcta y comparando como cadenas)
+        seriesconcatenadas = seriesconcatenadas.filter(item => 
+            !(String(item.idproducto) === String(idpro) && item.serie === codigoserie)
+        );
+       
+
+        // Remover la fila de la tabla temporal
+        $("#fila_temporal_" + idpro + "_" + codigoserie).remove();
+
+        // Reinserta la fila en la tabla izquierda.
+        // Se busca el producto en temp
+        let producto = temp.find(item => String(item.idpro) === String(idpro) && item.codigoserie === codigoserie);
+        if (producto) {
+            let filaIzquierda = `
+                <tr id="fila_${producto.id}">
+                    <td>${producto.codigoserie}</td>
+                    <td>
+                        <button type="button" class="btn btn-success w-100 mx-0.5" 
+                            onclick="agregarProaTras(${producto.id}, ${idpro}, '${producto.codigoserie}')">
+                            <i class="fas fa-long-arrow-alt-right"></i>    
+                        </button>
+                    </td>
+                </tr>
+            `;
+            $("#tblistcod tbody").append(filaIzquierda);
+        }
+        // **Importante:** Remover el código de serie del array traspasados, para que vuelva a aparecer en futuras búsquedas.
+        traspasados = traspasados.filter(codigo => String(codigo) !== String(codigoserie));
+        console.log("traspasados actualizado tras eliminar:", traspasados);
+        actualizarTablaTraspaso();
+    }
+
+    function agregarSinSerie(idpro) {
+        console.log("✅ Agregando producto sin serie con ID:", idpro);
+
+        // Verificar que `detalletraspaso` existe
+        if (!Array.isArray(detalletraspaso)) {
+            return;
+        }
+
+        let stockDisponible = parseInt($("#disponibles").val().trim()) || 0;
+
+        // Verificar si el input `cantidad` existe en el DOM
+        let cantidadInput = document.getElementById("cantidad");
+
+        if (!cantidadInput) {
+           
+            alert("⚠️ Error interno: No se encontró el campo de cantidad.");
+            return;
+        }
+
+        // Obtener y convertir la cantidad a número entero
+        let cantidadTexto = cantidadInput.value.trim();
+        
+
+        let cantidad = parseInt(cantidadTexto, 10);
+       
+        if (isNaN(cantidad) || cantidad <= 0) {
+            
+            alert("⚠️ Ingrese una cantidad válida.");
+            return;
+        }
+
+        // Obtener el nombre del producto seleccionado
+        let nombreProducto = $("#producto option:selected").text() || "Producto desconocido";
+
+        // Verificar si el producto ya está en `detalletraspaso`
+        let productoExistente = detalletraspaso.find(item => item.idproducto === idpro && !item.codigoserie);
+
+        if (productoExistente) {
+            let nuevaCantidad = productoExistente.cantidad + cantidad;
+
+            // 🔥 Restricción: No permitir más cantidad de la que hay en stock
+            if (nuevaCantidad > stockDisponible) {
+                alert("⚠️ No puedes agregar más de " + stockDisponible + " unidades en total.");
+                return;
+            }
+
+            productoExistente.cantidad = nuevaCantidad;
+            
+            
+            // Actualizar la cantidad en la tabla
+            $(`#fila_${idpro} .cantidad-col`).text(productoExistente.cantidad);
+            } 
+            else {
+            // 🔥 Restricción: No permitir agregar más cantidad de la que hay en stock
+                if (cantidad > stockDisponible) {
+                    
+                    alert("⚠️ No puedes agregar más de " + stockDisponible + " unidades.");
+                    return;
+                }
+
+                // Agregar un nuevo producto sin serie
+                let nuevoProducto = {
+                    idproducto: idpro,
+                    cantidad: cantidad,
+                    nombre: nombreProducto
+            };
+
+            detalletraspaso.push(nuevoProducto);
+            console.log("📌 Producto sin serie agregado al detalle del traspaso:", nuevoProducto);
+
+            // Agregar la fila a la tabla `tb_prodoc`
+            $("#tb_prodoc tbody").append(`
+                <tr id="fila_${idpro}">
+                    <td class="text-center cantidad-col">${cantidad}</td>
+                    <td>${nombreProducto}</td>
+                    <td class="text-center">SIN SERIE</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm w-100 mx-0.5" onclick="eliminarFilaSinSerie(${idpro})">
+                            <i class="fas fa-long-arrow-alt-left"></i>️
+                        </button>
+                    </td>
+                </tr>
+            `);
+        }
+        mostrarTablaTemporal();
+        actualizarTablaTraspaso();
+    }
+    function eliminarFilaSinSerie(idpro) {
+        console.log("🗑️ Eliminando producto sin serie con ID:", idpro);
+        // Buscar el índice del producto sin serie en detalletraspaso
+        let index = detalletraspaso.findIndex(item => 
+            String(item.idproducto) === String(idpro) && !item.codigoserie
+        );
+        
+        if (index >= 0) {
+            let item = detalletraspaso[index];
+            if (item.cantidad > 1) {
+                // Si hay más de una unidad, se disminuye en 1
+                item.cantidad--;
+                // Actualiza la cantidad en la fila temporal
+                $(`#fila_${idpro} .cantidad-col`).text(item.cantidad);
+            } else {
+                // Si la cantidad es 1, se elimina el registro
+                detalletraspaso.splice(index, 1);
+                $(`#fila_${idpro}`).remove();
+            }
+        }
+        actualizarTablaTraspaso();
+    }
+
+
+    function validarTraspasoAntesDeEnviar() {
+        let productosInvalidos = detalletraspaso.filter(p => 
+            !seriesconcatenadas.some(s => 
+                String(s.idproducto) === String(p.idproducto) &&  // 🔥 Ahora usa `idproducto`
+                String(s.serie) === String(p.codigoserie)
+            )
+        );
+
+        if (productosInvalidos.length > 0) {
+            
+            alert("Error: Algunos productos no tienen la información completa en `seriesconcatenadas`. Revisa la consola para más detalles.");
+            return false;
+        }
+
+        return true;
+    }
+
+
+    // Deprecado!!!!!!!!
+    // function agregaratrapaso() {
+    //     let cantidad = parseInt($("input[name='cantidad']").val().trim());
+    //     let maximo = parseInt($("#disponibles").val().trim());
+
+    //     if (isNaN(cantidad) || cantidad <= 0) {
+    //         console.warn("⚠️ Cantidad inválida:", cantidad);
+    //         alert("Debe ingresar una cantidad válida.");
+    //         return;
+    //     }
+
+    //     if (cantidad > maximo) {
+    //         console.warn("⚠️ Cantidad supera el stock disponible. Máximo permitido:", maximo);
+    //         alert("Cantidad a traspasar supera el máximo disponible.");
+    //         return;
+    //     }
+
+    //     console.log("Producto a traspasar:", $("#producto option:selected").text(), "Cantidad:", cantidad);
+    //     console.log("Temp antes del filtrado:", temp);
+
+    //     if (temp.length < cantidad) {
+    //         console.error("❌ Error: No hay suficientes productos en temp.");
+    //         alert("No hay suficientes unidades disponibles.");
+    //         return;
+    //     }
+
+    //     let tempSeleccionado = temp.slice(0, cantidad);
+    //     console.log("🔍 Productos seleccionados:", tempSeleccionado);
+
+    //     let idpro = $("#producto").val();
+    //     let nombrepro = $("#producto option:selected").text();
+
+    //     let productoExistente = detalletraspaso.find(item => item.idproducto === idpro);
+    //     if (productoExistente) {
+    //         productoExistente.cantidad += cantidad;
+    //         productoExistente.temp.push(...tempSeleccionado);
+    //         console.log("🔄 Producto ya existía, nueva cantidad:", productoExistente.cantidad);
+    //     } else {
+    //         detalletraspaso.push({
+    //             "idproducto": idpro,
+    //             "cantidad": cantidad,
+    //             "nombrepro": nombrepro,
+    //             "temp": tempSeleccionado,
+    //             "tieneserie": "NO"
+    //         });
+    //         console.log("✅ Producto agregado a detalletraspaso:", detalletraspaso);
+    //     }
+
+    //     actualizarTablaTraspaso();
+    // }
+
+
+
+    function quitarDetalle(idproducto) {
+      
+        $(`#fila_${idproducto}`).remove();
+
+        // Filtrar para eliminar el producto específico
+        detalletraspaso = detalletraspaso.filter(item => item.idproducto !== idproducto);
+       
+    }
+
+    function guardarTrapaso() {
+        let dataTras = {};
+
+        if ($("#bodega").val() != "") {
+            dataTras["usuario"] = "<?= $_SESSION['cloux_new'] ?>";
+            dataTras["fecha"] = convertDateFormat($("input[name='fecha']").val());
+            dataTras["bodega"] = $("#bodega").val();
+            dataTras["productos"] = detalletraspaso;
+            dataTras["observaciones"] = $("textarea[name='observaciones']").val();
+
+            
+            
+            // ✅ Validar solo los productos con serie
+            let productosConSerie = detalletraspaso.filter(p => p.codigoserie);
+            if (productosConSerie.length > 0 && !validarTraspasoAntesDeEnviar()) {
+                return;
+            }
+        } else {
+            Swal.fire('Error', 'Debes seleccionar un técnico', 'error');
+            
+            return;
+        }
+
+        let json = JSON.stringify(dataTras);
+       
+
         $.post("operaciones.php", {
             numero: '' + Math.floor(Math.random() * 9999999) + '',
             operacion: 'nuevoTraspasonew',
             traspaso: json,
             retornar: 'no'
         }, function(data) {
-            console.log("guardarTrapaso - $.post response data:", data);
-
-            if (data.logo != 'error') {
+            
+            if (data.logo !== 'error') {
                 toastr.success(data.mensaje);
             } else {
                 toastr.error(data.mensaje);
             }
-
             location.reload();
         });
-        console.log("guardarTrapaso - END");
     }
 
-    // Función para actualizar el estado del botón de guardar traspaso
-    function updateGuardarButtonState() {
-        const guardarButton = document.getElementById('btnGuardarTraspaso');
-
-        if (detalletraspaso.length > 0) { // Si hay productos en detalletraspaso
-            guardarButton.removeAttribute('disabled'); // Habilita el botón (remueve el atributo 'disabled')
-        } else { // Si detalletraspaso está vacío (no hay productos)
-            guardarButton.setAttribute('disabled', 'disabled'); // Deshabilita el botón (añade el atributo 'disabled')
-        }
-    }
 
     function convertDateFormat(string) {
         var info = string.split('/').reverse().join('/');
@@ -1383,69 +1797,176 @@ $opt .= '</select>';
     }
 
     function verTraspaso(index, idtras) {
-
+       
+        
         $("#tblisttras").removeClass("col-sm-12").addClass("col-sm-6");
         $("#dettras .box-title").html("Detalle de traspaso");
-        var tabla = '';
-        $.each(traspasosalb[index]['index'], function(i, valor) {
-            if (i == 0) {
-                var envia = valor.usr_env;
-                if (envia == undefined || envia == '') {
-                    envia = 'Bodega central';
-                }
 
-                var thextra = '';
-                var tdextra = '';
-                var txttrackin = '';
-                if (valor.idtracking != 2) {
-                    thextra = '';
-                    if (valor.idtracking == 1) {
-                        txttrackin = 'Preparación';
-                    } else if (valor.idtracking == 3) {
-                        txttrackin = 'Recepcionado';
-                    } else {
-                        txttrackin = 'No identificado';
-                    }
-                } else {
-                    thextra = '<th>Codigo Tracking</th>';
-                    txttrackin = 'En transito';
-                }
-                tabla = "Fecha <b>" + valor.fecha + "</b> De " + envia + " para " + valor.usr_rec + " <hr><table class='table table-sm table-bordered table-striped'><thead class='thead-dark'><th>Producto</th><th>Cantidad</th><th>N° Serie Pro.</th><th>N° Serie SIM.</th><th>Tipo</th><th>Tracking</th>" + thextra + "</thead><tbody>"
+        let items = traspasosalb[index]['index'];
+        if (!items || !items.length) {
+           
+            $("#dettras .box-body").html("<p>No hay ítems en este traspaso.</p>");
+            $("#dettras").show();
+            $('html, body').animate({ scrollTop: 0 }, 400);
+            return;
+        }
+        
+        let envia = items[0].usr_env || 'Bodega central';
+        let recibe = items[0].usr_rec || 'No definido';
+        let fecha = items[0].fecha || 'Sin fecha';
+        
+        
+        // Agrupar ítems por producto (ajusta el campo si es necesario)
+        let groups = {};
+        $.each(items, function(i, item) {
+            let prodName = item.proveedor; // Ajusta este campo si es distinto
+            if (!groups[prodName]) {
+                groups[prodName] = [];
             }
-
-            if (valor.idtracking != 2) {
-                tdextra = "";
-                if (valor.idtracking == 1) {
-                    txttrackin = 'Preparación';
-                } else if (valor.idtracking == 3) {
-                    txttrackin = 'Recepcionado';
-                } else {
-                    txttrackin = 'No identificado';
-                }
+            groups[prodName].push(item);
+        });
+       
+        
+        // Ordenar grupos:
+        // - Primero los productos con serie y varios ítems (desplegables)
+        // - Luego los productos con serie y un solo ítem
+        // - Finalmente, los productos sin serie
+        let sortedGroups = Object.entries(groups).map(([product, groupItems]) => ({
+            product: product,
+            items: groupItems,
+            // Usamos la existencia de 'codigo' para determinar si tiene serie.
+            tiene_serie: (groupItems[0].codigo && groupItems[0].codigo.trim() !== "") ? "SI" : "NO",
+            count: groupItems.length
+        })).sort((a, b) => {
+            // Primero los que tienen serie y varios ítems
+            if (a.tiene_serie === "SI" && a.count > 1 && !(b.tiene_serie === "SI" && b.count > 1)) return -1;
+            if (b.tiene_serie === "SI" && b.count > 1 && !(a.tiene_serie === "SI" && a.count > 1)) return 1;
+            // Luego, si tienen serie pero solo uno, se ponen antes de los sin serie
+            if (a.tiene_serie === "SI" && a.count === 1 && b.tiene_serie === "NO") return -1;
+            if (b.tiene_serie === "SI" && b.count === 1 && a.tiene_serie === "NO") return 1;
+            return 0;
+        });
+        
+        
+        // Verificar si se debe mostrar la columna "Codigo Tracking"
+        let hasTrackingCode = items.some(it => it.idtracking == 2);
+       
+        
+        // Construir la cabecera de la tabla (sin la columna "N° Serie SIM.")
+        let table = "Fecha <b>" + fecha + "</b> De " + envia + " para " + recibe + " <hr>";
+        table += "<table class='table table-sm table-bordered table-striped'><thead class='thead-dark'><tr>";
+        table += "<th>Producto</th><th>Cantidad</th><th>N° Serie Pro.</th><th>Tipo</th><th>Tracking</th>";
+        if (hasTrackingCode) { table += "<th>Codigo Tracking</th>"; }
+        table += "<th>Acción</th></tr></thead><tbody>";
+        
+        let idx = 0;
+        $.each(sortedGroups, function(i, group) {
+            let product = group.product;
+            let groupItems = group.items;
+            let count = group.count;
+            let first = groupItems[0];
+            
+            
+            let expandBtn = "";
+            let actionBtn = "";
+            let serieDisplay = "";
+            
+            // Si el producto es sin serie, mostramos "Sin serie"
+            if (group.tiene_serie === "NO") {
+                serieDisplay = "Sin serie";
             } else {
-                tdextra = "<td>" + valor.codigotracking + "</td>";
-                txttrackin = 'En transito';
+                // Con serie: si hay más de un ítem, mostramos "-" en resumen; si es 1, mostramos el código
+                serieDisplay = (count > 1) ? "-" : (first.codigo || "Sin serie");
+            }
+            
+            // Determinar si se debe mostrar botón de acción:
+            // Solo se muestra si el grupo tiene serie ("SI") y más de 1 ítem.
+            let hasSerie = (group.tiene_serie === "SI");
+            if (hasSerie && count > 1) {
+                // Si no existe first.direction, se asume 1 (Técnico A)
+                let direction = first.direction || 1;
+                expandBtn = createExpandButton(idx, direction);
+            } else {
+                expandBtn = "";
+                actionBtn = "";
+            }
+            
+            table += "<tr>";
+            table += "<td>" + product + "</td>";
+            table += "<td>" + count + "</td>";
+            table += "<td>" + serieDisplay + "</td>";
+            table += "<td>Producto</td>";
+            table += "<td>" + getTrackingText(first.idtracking) + "</td>";
+            if (hasTrackingCode) {
+                table += (first.idtracking == 2 ? "<td>" + first.codigotracking + "</td>" : "<td></td>");
+            }
+            table += "<td>" + expandBtn + " " + actionBtn + "</td>";
+            table += "</tr>";
+            
+            // Agregar fila de detalle solo para grupos con serie y más de un ítem
+            if (hasSerie && count > 1) {
+                // Aseguramos que la fila de detalle tenga el mismo id que el data-target del botón
+                let direction = first.direction || 1;
+                table += "<tr class='detail-row' id='detail_" + direction + "_" + idx + "' style='display:none;'><td colspan='" + (hasTrackingCode ? 7 : 6) + "'>";
+                table += "<table class='table table-sm table-bordered'><thead><tr>";
+                table += "<th>N° Serie Pro.</th><th>Tipo</th><th>Tracking</th>";
+                if (hasTrackingCode) { 
+                    table += "<th>Codigo Tracking</th>"; 
+                }
+                table += "</tr></thead><tbody>";
+                $.each(groupItems, function(j, item) {
+                    table += "<tr>";
+                    table += "<td>" + (item.codigo || "Sin serie") + "</td>";
+                    table += "<td>Producto</td>";
+                    table += "<td>" + getTrackingText(item.idtracking) + "</td>";
+                    if (hasTrackingCode) {
+                        table += (item.idtracking == 2 ? "<td>" + item.codigotracking + "</td>" : "<td></td>");
+                    }
+                    table += "</tr>";
+                });
+                table += "</tbody></table></td></tr>";
             }
 
-            /*var selser = '';
-         $.each(traspasosalb[index]['sobbra'],function(ind,valors){
-            if(ind==0){
-                selser +='<select id="selser_'+i+'" onchange="enviaractser('+valor.codigoid+','+i+','+idtras+')" class="form-control"><option value="'+valor.codigoid+'" selected>'+valor.codigo+'</option>';
-            }
-            selser +='<option value="'+valors.ser_id+'">'+valors.ser_codigo+'</option>';
+            idx++;
         });
-         selser +='</select>';*/
-
-            tabla += "<tr><td>" + valor.proveedor + "</td><td>1</td><td>" + valor.codigo + "</td><td></td><td>Producto</td><td>" + txttrackin + "</td>" + tdextra + "</tr>";
-
-        });
-
-        tabla += "</tbody></table>";
-        $("#dettras .box-body").html(tabla);
+        
+        table += "</tbody></table>";
+        
+       
+        $("#dettras .box-body").html(table);
         $("#dettras").show();
-        $('html, body').animate({
-            scrollTop: 0
-        }, 400);
+        $('html, body').animate({ scrollTop: 0 }, 400);
+        
+        // Evento para expandir/contraer las filas de detalle
+        $(".expand-btn").off("click").on("click", function () {
+            const target = $(this).data('target');
+            
+            const detailRow = $('#' + target);
+            if (detailRow.is(':visible')) {
+                detailRow.slideUp();
+                $(this).html('<i class="fas fa-list"></i>').data('state', 'collapsed').attr('aria-label', 'Expandir detalles');
+               
+            } else {
+                detailRow.slideDown();
+                $(this).html('<i class="fas fa-list-alt"></i>').data('state', 'expanded').attr('aria-label', 'Ocultar detalles');
+                
+            }
+        });
+    }
+
+    /**
+     * Devuelve el texto para el campo Tracking según el idtracking.
+     */
+    function getTrackingText(idtracking) {
+        if (idtracking == 1) {
+            return 'Preparación';
+        } else if (idtracking == 2) {
+            return 'En tránsito';
+        } else if (idtracking == 3) {
+            return 'Recepcionado';
+        } else {
+            return 'No identificado';
+        }
     }
 
     function enviaractser(idserantoguo, index, idtra) {
@@ -1507,6 +2028,14 @@ $opt .= '</select>';
         if (opc == 0) {
             let tecnico = $('#bodega').val();
             if (tecnico != '') {
+                console.log('entro');
+                console.log(tecnico);
+                console.log('estado del boton');
+                console.log($("#btnVerPro").prop('disabled'));
+
+                $("#btnVerPro").prop('disabled', false); // Habilitar el botón 
+                console.log('estado del boton');
+                console.log($("#btnVerPro").prop('disabled'));
                 $('#divtraspaso').show();
                 productosxternico(tecnico, 1);
             } else {
@@ -1523,15 +2052,25 @@ $opt .= '</select>';
                 $('#formeditar').hide();
             }
         }
+        
     }
 
     function traspasoTecnico(event) {
-
         event.preventDefault();
+
+        let btnTraspaso = $("#btntraspasotecnico");
+
+        if (!btnTraspaso.hasClass("active")) {
+            btnTraspaso.addClass("active"); // Agregar clase si no la tiene
+        }
+
         $('#divbodega2').show();
         $('#divpro').hide();
         $('#tblistcod').hide();
-        $('#btntraspasotecnico').html('<i class="fa fa-times-circle-o" aria-hidden="true"></i> Cancelar').removeClass('btn-success').addClass('btn-danger').attr('onclick', 'cancelarTraspasoTecnico(event)');
+        btnTraspaso.html('<i class="fa fa-times-circle-o" aria-hidden="true"></i> Cancelar')
+                .removeClass('btn-success')
+                .addClass('btn-danger')
+                .attr('onclick', 'cancelarTraspasoTecnico(event)');
         $('#divproductos').show();
         $('#divbuttons').hide();
         $('#tb_prodoc').hide();
@@ -1540,8 +2079,18 @@ $opt .= '</select>';
 
     function cancelarTraspasoTecnico(event) {
         event.preventDefault();
+
+        let btnTraspaso = $("#btntraspasotecnico");
+
+        if (btnTraspaso.hasClass("active")) {
+            btnTraspaso.removeClass("active"); // Remover clase si está activa
+        }
+
         $('#divbodega2').hide();
-        $('#btntraspasotecnico').html('<i class="fa fa-exchange" aria-hidden="true"></i> Traspaso entre técnicos').removeClass('btn-danger').addClass('btn-success').attr('onclick', 'traspasoTecnico(event)');
+        btnTraspaso.html('<i class="fa fa-exchange" aria-hidden="true"></i> Traspaso entre técnicos')
+                .removeClass('btn-danger')
+                .addClass('btn-success')
+                .attr('onclick', 'traspasoTecnico(event)');
         $('#divproductos').hide();
         $('#formeditar').hide();
         $('#bodega').val('');
@@ -2060,5 +2609,4 @@ $opt .= '</select>';
         opcionTraspaso = 2;
         getAllAsociacion();
     }
-    updateGuardarButtonState(); // Llama a la función para actualizar el estado del botón de guardar traspaso al cargar la página
 </script>

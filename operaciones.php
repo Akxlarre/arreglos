@@ -28,6 +28,38 @@ function cellColor($cells, $color)
   $objPHPExcel->getActiveSheet()->getStyle($cells)->getFill()->applyFromArray(array('type' => PHPExcel_Style_Fill::FILL_SOLID, 'startcolor' => array('rgb' => $color)));
 }
 
+// Bloque utilizado para debuggear
+/* $log_dir = "/var/www/html/cloux/logs"; // Ruta del log
+if (!file_exists($log_dir)) {
+    mkdir($log_dir, 0777, true);
+}
+
+$log_file = $log_dir . "/debug_peticiones.txt";
+
+file_put_contents(__DIR__ . "/logs/debug_peticiones.txt", 
+  "[" . date('Y-m-d H:i:s') . "] 📩 Datos recibidos:\n" . print_r($_REQUEST, true) . "\n\n",
+  FILE_APPEND
+);
+
+if (isset($link) && mysqli_connect_errno()) {
+  file_put_contents(__DIR__ . "/logs/debug_peticiones.txt", 
+      "❌ Error de conexión a MySQL: " . mysqli_connect_error() . "\n", 
+      FILE_APPEND
+  );
+} */
+
+function ejecutarConsulta($sql, $link) {
+  $resultado = $link->query($sql);
+  if (!$resultado) {
+      file_put_contents(__DIR__ . "/logs/debug_peticiones.txt", 
+          "⚠️ Error en SQL: " . mysqli_error($link) . "\nConsulta: " . $sql . "\n\n", 
+          FILE_APPEND
+      );
+  }
+  return $resultado;
+}
+
+
 
 switch ($_REQUEST["operacion"]) {
     /*****************************************
@@ -3499,15 +3531,12 @@ OPERACIONES INVENTARIO
       $_REQUEST["sminimo"] = 0;
     }
 
-    if ($_REQUEST["smaximo"] == '' || $_REQUEST["smaximo"] == null) {
-      $_REQUEST["smaximo"] = 0; // O un valor por defecto si prefieres
-    }
-
     if ($_REQUEST["codigo"] == '' || $_REQUEST["codigo"] == null) {
       $_REQUEST["codigo"] = 0;
     }
-    $sql = "insert into productos(pro_codigo,pro_serie,pro_familia,pro_subfamilia,pro_marca,pro_nombre,pro_stockminimo, pro_stockmaximo)values('" . $_REQUEST["codigo"] . "'," . $serie . "," . $_REQUEST["familia"] . "," . $_REQUEST["subfamilia"] . "," . $_REQUEST["marca"] . ",'" . $_REQUEST["nombre"] . "'," . $_REQUEST["sminimo"] . ", " . $_REQUEST["smaximo"] . ")";
-
+    $sql = "insert into productos(pro_codigo,pro_serie,pro_familia,pro_subfamilia,pro_marca,pro_nombre,pro_stockminimo)values('" . $_REQUEST["codigo"] . "'," . $serie . "," . $_REQUEST["familia"] . "," . $_REQUEST["subfamilia"] . "," . $_REQUEST["marca"] . ",'" . $_REQUEST["nombre"] . "'," . $_REQUEST["sminimo"] . ")";
+    /*echo $sql;
+die();*/
     $res = $link->query($sql);
     $sale_a = $_REQUEST["retornar"];
     break;
@@ -3524,7 +3553,7 @@ OPERACIONES INVENTARIO
     while ($fila = mysqli_fetch_array($res)) {
 
       $detallestock = getStockxProducto($fila["pro_id"], $fila["pro_serie"]);
-      $productos[]  = array("idpro" => $fila["pro_id"], "codigo" => $fila["pro_codigo"], "proserie" => $fila["pro_serie"], "idfam" => $fila["pro_familia"], "familia" => $fila["familia"], "idsfam" => $fila["pro_subfamilia"], "subfamilia" => $fila["subfamilia"], "idmar" => $fila["pro_marca"], "marca" => $fila["marca"], "nombre" => $fila["pro_nombre"], "sminimo" => $fila["pro_stockminimo"],"smaximo" => $fila["pro_stockmaximo"], "stock" => $detallestock["stock"], "cantidad" => $fila["cantidad"], "precio" => $fila["pro_valor"], "detallestock" => $detallestock);
+      $productos[]  = array("idpro" => $fila["pro_id"], "codigo" => $fila["pro_codigo"], "proserie" => $fila["pro_serie"], "idfam" => $fila["pro_familia"], "familia" => $fila["familia"], "idsfam" => $fila["pro_subfamilia"], "subfamilia" => $fila["subfamilia"], "idmar" => $fila["pro_marca"], "marca" => $fila["marca"], "nombre" => $fila["pro_nombre"], "sminimo" => $fila["pro_stockminimo"], "stock" => $detallestock["stock"], "cantidad" => $fila["cantidad"], "precio" => $fila["pro_valor"], "detallestock" => $detallestock);
     }
     mysqli_close($link);
     echo json_encode($productos);
@@ -3884,53 +3913,42 @@ $inventario["pxv"]=$pxv;*/
     }
     echo json_encode($productos);
     break;
-
-    case 'editarproducto':
+  case 'editarproducto':
+    $serie = 0;
+    $marca = 0;
+    $familia = 0;
+    $subfamilia = 0;
+    $sminimo = 0;
+    if ($_REQUEST["serie"] == '') {
       $serie = 0;
+    } else {
+      $serie = $_REQUEST["serie"];
+    }
+    if ($_REQUEST["marca"] == '') {
       $marca = 0;
+    } else {
+      $marca = $_REQUEST["marca"];
+    }
+    if ($_REQUEST["familia"] == '') {
       $familia = 0;
+    } else {
+      $familia = $_REQUEST["familia"];
+    }
+    if ($_REQUEST["subfamilia"] == '') {
       $subfamilia = 0;
+    } else {
+      $subfamilia = $_REQUEST["subfamilia"];
+    }
+    if ($_REQUEST["sminimo"] == '') {
       $sminimo = 0;
-      $smaximo = 0; 
-  
-      if ($_REQUEST["serie"] == '') {
-        $serie = 0;
-      } else {
-        $serie = $_REQUEST["serie"];
-      }
-      if ($_REQUEST["marca"] == '') {
-        $marca = 0;
-      } else {
-        $marca = $_REQUEST["marca"];
-      }
-      if ($_REQUEST["familia"] == '') {
-        $familia = 0;
-      } else {
-        $familia = $_REQUEST["familia"];
-      }
-      if ($_REQUEST["subfamilia"] == '') {
-        $subfamilia = 0;
-      } else {
-        $subfamilia = $_REQUEST["subfamilia"];
-      }
-      if ($_REQUEST["sminimo"] == '') {
-        $sminimo = 0;
-      } else {
-        $sminimo = $_REQUEST["sminimo"];
-      }
-  
-      if ($_REQUEST["smaximo"] == '') {
-        $smaximo = 0; 
-      } else {
-        $smaximo = $_REQUEST["smaximo"];
-      }
-  
-  
-      $sql = "update productos set pro_codigo='" . $_REQUEST["codigo"] . "',pro_serie=" . $serie . ",pro_familia=" . $familia . ",pro_subfamilia=" . $subfamilia . ",pro_marca=" . $marca . ",pro_nombre='" . $_REQUEST["nombre"] . "',pro_stockminimo=" . $sminimo . ", pro_stockmaximo = " . $smaximo . " where pro_id=" . $_REQUEST["idpro"] . "";
-      $res = $link->query($sql);
-      $sale_a = $_REQUEST["retornar"];
-      // echo $sql;
-      break;
+    } else {
+      $sminimo = $_REQUEST["sminimo"];
+    }
+    $sql = "update productos set pro_codigo='" . $_REQUEST["codigo"] . "',pro_serie=" . $serie . ",pro_familia=" . $familia . ",pro_subfamilia=" . $subfamilia . ",pro_marca=" . $marca . ",pro_nombre='" . $_REQUEST["nombre"] . "',pro_stockminimo=" . $sminimo . " where pro_id=" . $_REQUEST["idpro"] . "";
+    $res = $link->query($sql);
+    $sale_a = $_REQUEST["retornar"];
+    // echo $sql;
+    break;
 
   case 'eliminarproducto':
     $sql = "delete from productos where pro_id='" . $_REQUEST["id"] . "'";
@@ -3965,18 +3983,46 @@ $inventario["pxv"]=$pxv;*/
 
   case 'getStockProducto':
 
-    $sql  = "SELECT t1.*, t2.pro_stock, t2.pro_serie, (select count(ser_id) from serie_guia where ser_estado = 1 and	ser_condicion=1 and pro_id = {$_REQUEST["producto"]} and ser_instalado = 0) as stock  
-            FROM serie_guia t1 
-            inner join productos t2 on t1.pro_id = t2.pro_id
-            WHERE t1.pro_id = {$_REQUEST["producto"]} and t1.ser_estado = 1 and t1.ser_condicion=1 and ser_instalado = 0";
+    $sql = "SELECT DISTINCT t1.ser_id, t1.ser_codigo, t1.gui_id, t1.pro_id, t1.usu_id_cargo, 
+                t2.pro_stock, t2.pro_serie, t1.prov_id, 
+                (SELECT COUNT(DISTINCT ser_id) 
+                 FROM serie_guia 
+                 WHERE ser_estado = 1 
+                   AND ser_condicion = 1 
+                   AND pro_id = {$_REQUEST['producto']} 
+                   AND ser_instalado = 0 
+                   AND usu_id_cargo = {$_REQUEST['bodega']}) AS stock  
+        FROM serie_guia t1 
+        INNER JOIN productos t2 ON t1.pro_id = t2.pro_id
+        WHERE t1.pro_id = {$_REQUEST['producto']} 
+          AND t1.ser_estado = 1 
+          AND t1.ser_condicion = 1 
+          AND t1.ser_instalado = 0
+          AND t1.usu_id_cargo = {$_REQUEST['bodega']}";
     $res    = $link->query($sql);
     $series = array();
 
     foreach ($res as $key) {
       if ($key['pro_serie'] == 1) {
-        array_push($series, array('keyserie' => $key['pro_serie'], 'valida' => 1, 'idserie' => $key['ser_id'], 'idguia' => $key['gui_id'], 'codigoserie' => $key['ser_codigo'], 'idproveedor' => $key['prov_id'], 'stock' => $key['pro_stock']));
+          array_push($series, array(
+            'keyserie' => $key['pro_serie'], 
+            'valida' => 1, 
+            'idserie' => $key['ser_id'], 
+            'idguia' => $key['gui_id'], 
+            'codigoserie' => $key['ser_codigo'], 
+            'idproveedor' => $key['prov_id'], 
+            'stock' => $key['stock'] // usa el stock calculado
+          ));
       } else {
-        array_push($series, array('keyserie' => $key['pro_serie'], 'valida' => 0, 'idserie' => $key['ser_id'], 'idguia' => $key['gui_id'], 'codigoserie' => $key['ser_codigo'], 'idproveedor' => $key['prov_id'], 'stock' => $key['pro_stock']));
+          array_push($series, array(
+            'keyserie' => $key['pro_serie'], 
+            'valida' => 0, 
+            'idserie' => $key['ser_id'], 
+            'idguia' => $key['gui_id'], 
+            'codigoserie' => $key['ser_codigo'], 
+            'idproveedor' => $key['prov_id'], 
+            'stock' => $key['stock'] // usa el stock calculado
+          ));
       }
     }
     mysqli_close($link);
@@ -4028,197 +4074,207 @@ $inventario["pxv"]=$pxv;*/
 
     break;
 
-  case 'nuevoTraspasonew':
+    case 'nuevoTraspasonew':
+
+      $datos = json_decode($_REQUEST["traspaso"], true);
+    
+      if (!$datos) {
+          exit(json_encode(["mensaje" => "Error en el formato JSON", "logo" => "error"]));
+      }
+    
+      $idtecnico    = $datos["bodega"];
+      $fecharequest = $datos["fecha"];
+      $productos    = isset($datos['productos']) ? $datos['productos'] : [];
+      $observaciones = $datos['observaciones'];
+      $usumod       = $datos['usuario'];
+    
+      if (empty($productos)) {
+          exit(json_encode(["mensaje" => "No hay productos para ingresar", "logo" => "error"]));
+      }
+    
+      $prods = array();
+    
+      foreach ($productos as $key) {
+          $idProducto = $key['idproducto'];
+          $codigoserie = isset($key['codigoserie']) ? $key['codigoserie'] : null;
+          $cantidad = isset($key['cantidad']) ? intval($key['cantidad']) : 1;
+    
+          if ($codigoserie) {
+              $query_ser_id = "SELECT ser_id FROM serie_guia WHERE TRIM(ser_codigo) = '{$codigoserie}' AND pro_id = '{$idProducto}'";
+              $res_ser_id = $link->query($query_ser_id);
+              $row_ser_id = $res_ser_id ? $res_ser_id->fetch_assoc() : null;
+              $ser_id = $row_ser_id ? $row_ser_id['ser_id'] : null;
+    
+              if (!$ser_id) {
+                  exit(json_encode(["mensaje" => "Error: Código de serie no encontrado", "logo" => "error"]));
+              }
+    
+              $prods[] = array('id' => $ser_id, 'idpro' => $idProducto);
+    
+              $update_query = "UPDATE serie_guia 
+                               SET usu_id_cargo = {$idtecnico}, ser_instalado = 0 
+                               WHERE ser_id = {$ser_id} AND pro_id = {$idProducto} AND ser_estado = 1";
+              $link->query($update_query);
+  
+              $stock_update_query = "UPDATE productos SET pro_stock = pro_stock - 1 WHERE pro_id = '{$idProducto}'";
+              $link->query($stock_update_query);
+    
+          } else {
+              $query_stock = "SELECT pro_stock FROM productos WHERE pro_id = '{$idProducto}'";
+              $res_stock = $link->query($query_stock);
+              $stock = $res_stock ? $res_stock->fetch_assoc()['pro_stock'] : 0;
+    
+              if ($stock < $cantidad) {
+                  exit(json_encode(["mensaje" => "Stock insuficiente para ID producto: $idProducto", "logo" => "error"]));
+              }
+    
+              $query_sin_serie = "SELECT ser_id FROM serie_guia WHERE pro_id = '{$idProducto}' AND ser_estado = 1 AND usu_id_cargo != {$idtecnico} LIMIT {$cantidad}";
+              $res_sin_serie = $link->query($query_sin_serie);
+    
+              if ($res_sin_serie->num_rows < $cantidad) {
+                  exit(json_encode(["mensaje" => "Stock insuficiente para ID producto: $idProducto", "logo" => "error"]));
+              }
+    
+              while ($row = $res_sin_serie->fetch_assoc()) {
+                  $ser_id = $row['ser_id'];
+                  $prods[] = array('id' => $ser_id, 'idpro' => $idProducto);
+    
+                  $update_query = "UPDATE serie_guia 
+                                   SET usu_id_cargo = {$idtecnico}, ser_instalado = 0  
+                                   WHERE ser_id = {$ser_id} AND pro_id = {$idProducto} AND ser_estado = 1";
+                  $link->query($update_query);
+              }
+    
+              $stock_update_query = "UPDATE productos SET pro_stock = pro_stock - {$cantidad} WHERE pro_id = '{$idProducto}'";
+              $link->query($stock_update_query);
+          }
+      }
+    
+      if (empty($prods)) {
+          exit(json_encode(["mensaje" => "No hay productos válidos para traspasar", "logo" => "error"]));
+      }
+    
+      $sql = "INSERT INTO traspasos_series (tra_fecha, usu_id_recibe, tra_observacion, usu_modifica, tra_detalle) 
+              VALUES ('{$fecharequest}', {$idtecnico}, '{$observaciones}', {$usumod}, '" . json_encode($prods) . "')";
+    
+      if (!$link->query($sql)) {
+          exit(json_encode(["mensaje" => "Error en la base de datos", "logo" => "error"]));
+      }
+  
+      echo json_encode(["mensaje" => "Traspaso realizado", "logo" => "success"]);
+    break;
+  
+  
+  
+
+  case 'nuevoTraspaso':
 
     $datos        = json_decode($_REQUEST["traspaso"], true);
     $tipo         = 1; // traspaso de bodega principal a bodega tecnico
     $idtecnico    = $datos["bodega"];
-    $fecharequest = $datos["fecha"];
-    $prod         = $datos['productos'];
-    $productos    = $datos['prods'];
-    $observaciones = $datos['observaciones'];
-    $usumod       = $datos['usuario'];
-
-    if (!empty($productos)) {
-      $prods = array();
-      foreach ($productos as $key) {
-        if ($key['tieneserie'] == 'NO') {
-          for ($i = 0; $i < $key['cantidad']; $i++) {
-            $prods[] = array(
-              'id'=>$key['temp'][$i]['id'],
-              'idpro'=>$key['temp'][$i]['idpro']
-            );
-          }
-        }
-        else{
-          for ($i = 0; $i < $key['cantidad']; $i++) {
-            $prods[] = array(
-              'id'=>$key['seriesconcatenadas'][$i]['ser_id'],
-              'idpro'=>$key['seriesconcatenadas'][$i]['idporducto']
-            );
-          }
-        }
-      }
-      $sql = "insert into traspasos_series(tra_fecha,usu_id_recibe,tra_observacion,usu_modifica,tra_detalle)values('{$fecharequest}'," . $idtecnico . ",'" . $observaciones . "'," . $usumod . ",'" . str_replace("\\", '', json_encode($prods)) . "')";
+    $fecharequest =  $datos["fecha"];
+    try {
+      $sql = "insert into traspasos(tras_fecha,tras_bodega,tras_observaciones,tras_usuario,tras_tipo)values('{$fecha}'," . $datos["bodega"] . ",'" . $datos["observaciones"] . "'," . $datos["usuario"] . "," . $tipo . ")";
       $res = $link->query($sql);
-
-      foreach ($productos as $key) {
-        if ($key['tieneserie'] == 'NO') {
-          for ($i = 0; $i < $key['cantidad']; $i++) {
-            $_id = $key['temp'][$i]['id'];
-            $_idpro = $key['temp'][$i]['idpro'];
-            $sql1 = "update serie_guia set usu_id_cargo = {$idtecnico} where ser_id = {$_id} and pro_id = {$_idpro} and ser_estado = 1";
-            $res1 = $link->query($sql1);
-
-            $sql2 = "update productos set pro_stock = (select pro_stock from productos where pro_id = {$_idpro}) - 1 where pro_id = {$_idpro}";
-            $res2 = $link->query($sql2);
-          }
-        } else {
-          for ($i = 0; $i < $key['cantidad']; $i++) {
-            $_id = $key['seriesconcatenadas'][$i]['ser_id'];
-            $_idpro = $key['seriesconcatenadas'][$i]['idporducto'];
-            $sql1 = "update serie_guia set usu_id_cargo = {$idtecnico} where ser_id = {$_id} and pro_id = {$_idpro} and ser_estado = 1";
-            $res1 = $link->query($sql1);
-
-            $sql2 = "update productos set pro_stock = (select pro_stock from productos where pro_id = {$_idpro}) - 1 where pro_id = {$_idpro}";
-            $res2 = $link->query($sql2);
-          }
-        }
-      }
-    } else {
-      $devuelve = array('mensaje' => 'No hay productos para ingresar', 'logo' => 'error');
-    }
-
-    $devuelve = array('mensaje' => 'Traspaso realizado', 'logo' => 'success');
-    mysqli_close($link);
-    echo json_encode($sql);
-
-    break;
-
-    case 'nuevoTraspaso':
-
-      $datos        = json_decode($_REQUEST["traspaso"], true);
-      $tipo         = 1; // traspaso de bodega principal a bodega tecnico
-      $idtecnico    = $datos["bodega"];
-      $fecharequest =  $datos["fecha"];
-      $response     = array(); // Inicializa el array de respuesta para JSON
-  
-      try {
-        $link->begin_transaction(); // Iniciar transacción para asegurar la integridad de las operaciones
-  
-        $sql = "insert into traspasos(tras_fecha,tras_bodega,tras_observaciones,tras_usuario,tras_tipo)values('{$fecha}'," . $datos["bodega"] . ",'" . $datos["observaciones"] . "'," . $datos["usuario"] . "," . $tipo . ")";
-        $res = $link->query($sql);
-        $idtras = $link->insert_id;
-        $productos = $datos["productos"];
-  
-        if (count($productos) >  0) {
-          foreach ($productos as $index => $valor) {
-            $idbod = $datos["bodega"];
-            $idpro = $valor["idpro"];
-            $cantidad = $valor["cantidad"];
-            // Ya NO inicializamos $producto_con_stock_minimo aquí
-  
-            if ((int)$valor["ttraspaso"] == 1) {
-              foreach ($valor["series"] as $index1 => $valor1) {
-                $_serie1 = $valor1['serie'];
-              }
-              $_serie2 = '';
-              $idprodd = $idpro;
-            } else {
-              $sql2 = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
-              $res2 = $link->query($sql2);
-              $val2 = mysqli_fetch_array($res2);
-              $idprodd = $val2['easi_id'];
-              $_serie1 = $val2['easi_seriegps'];
-              $_serie2 = $val2['easi_seriesim'];
+      $idtras = $link->insert_id;
+      $productos = $datos["productos"];
+      if (count($productos) >  0) {
+        foreach ($productos as $index => $valor) {
+          $idbod = $datos["bodega"];
+          $idpro = $valor["idpro"];
+          $cantidad = $valor["cantidad"];
+          if ((int)$valor["ttraspaso"] == 1) {
+            foreach ($valor["series"] as $index1 => $valor1) {
+              $_serie1 = $valor1['serie'];
             }
-  
-            if ((int)$valor["ttraspaso"] == 1) {
-  
-              $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idpro . "," . $cantidad . ",1,'','',0)";
+            $_serie2 = '';
+            $idprodd = $idpro;
+          } else {
+            $sql2 = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
+            $res2 = $link->query($sql2);
+            $val2 = mysqli_fetch_array($res2);
+            $idprodd = $val2['easi_id'];
+            $_serie1 = $val2['easi_seriegps'];
+            $_serie2 = $val2['easi_seriesim'];
+          }
+
+          if ((int)$valor["ttraspaso"] == 1) {
+
+            $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idpro . "," . $cantidad . ",1,'','',0)";
+            $res3 = $link->query($sql3);
+            $iddetalle = $link->insert_id;
+            $stockactual = obtenervalor("productos", "pro_stock", "where pro_id=" . $idpro . "");
+            $nuevostock = $stockactual - $cantidad;
+            $sql4 = "update productos set pro_stock=" . $nuevostock . " where pro_id=" . $idpro . "";
+            $res4 = $link->query($sql4);
+          } else {
+            $sql = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
+            $res = $link->query($sql);
+            $val = mysqli_fetch_array($res);
+            $idprod = $val['easi_idgps'];
+            $response['sql_1_idgps_' . $index] = $idprod;
+            $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idprod . "," . $cantidad . ",2,'" . $_serie1 . "','" . $_serie2 . "'," . $idprodd . ")";
+            $res3 = $link->query($sql3);
+            $iddetalle = $link->insert_id;
+            $response['sql_1_' . $index] = $sql3;
+            $sql4 = "update equipos_asociados set easi_estado=3 where easi_id=" . $idpro . "";
+            $res4 = $link->query($sql4);
+
+            $response['sql_1__update_' . $index] = $sql4;
+          }
+
+          if ($valor["tieneserie"] == "SI") {
+            foreach ($valor["series"] as $index1 => $valor1) {
+              $sql2 = "update codigosxproducto set cxp_estado= 2 where cxp_id=" . $index1 . "";
+              $res2 = $link->query($sql2);
+              $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_nserie,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . ",1," . $valor["idpro"] . ",'" . $valor1["serie"] . "',1,'Traspaso desde bodega principal'," . $idpro . "," . $valor["ttraspaso"] . ",0)";
               $res3 = $link->query($sql3);
-              $iddetalle = $link->insert_id;
-  
-              // --- INICIO: Lógica para descontar stock  ---
-              $stockactual = obtenervalor("productos", "pro_stock", "where pro_id=" . $idpro . "");
-              $nuevostock = $stockactual - $cantidad;
-              $sql4 = "update productos set pro_stock=" . $nuevostock . " where pro_id=" . $idpro . "";
+              $sql4 = "insert into codigosxtraspaso(cxt_detalletraspaso,cxt_serie)values(" . $iddetalle . ",'" . $valor1["serie"] . "')";
               $res4 = $link->query($sql4);
-              // --- FIN: Lógica para descontar stock ---
-  
-  
+            }
+          } else {
+            $tipo = '';
+            if ((int)$valor["ttraspaso"] == 1) {
+              $tipo = 'pxt_tipo=1';
+              $idprod = $valor["idpro"];
+              $ideasi = 0;
             } else {
-              // Lógica para traspaso de Kits GPS
+              $tipo = 'pxt_tipo=2';
               $sql = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
               $res = $link->query($sql);
               $val = mysqli_fetch_array($res);
               $idprod = $val['easi_idgps'];
-              $response['sql_1_idgps_' . $index] = $idprod;
-              $sql3 = "insert into detalletraspaso(dtras_traspaso,dtras_bodega,dtras_producto,dtras_cantidad,dtras_tipo,dtras_seriegps,dtras_seriesim,dtras_idasi)values(" . $idtras . "," . $idbod . "," . $idprod . "," . $cantidad . ",2,'" . $_serie1 . "','" . $_serie2 . "'," . $idprodd . ")";
-              $res3 = $link->query($sql3);
-              $iddetalle = $link->insert_id;
-              $response['sql_1_' . $index] = $sql3;
-              $sql4 = "update equipos_asociados set easi_estado=3 where easi_id=" . $idpro . "";
-              $res4 = $link->query($sql4);
-              $response['sql_1__update_' . $index] = $sql4;
+              $ideasi = $val['easi_id'];
             }
-  
-            if ($valor["tieneserie"] == "SI") {
-              foreach ($valor["series"] as $index1 => $valor1) {
-                $sql2 = "update codigosxproducto set cxp_estado= 2 where cxp_id=" . $index1 . "";
-                $res2 = $link->query($sql2);
-                $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_nserie,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . ",1," . $valor["idpro"] . ",'" . $valor1["serie"] . "',1,'Traspaso desde bodega principal'," . $idpro . "," . $valor["ttraspaso"] . ",0)";
-                $res3 = $link->query($sql3);
-                $sql4 = "insert into codigosxtraspaso(cxt_detalletraspaso,cxt_serie)values(" . $iddetalle . ",'" . $valor1["serie"] . "')";
-                $res4 = $link->query($sql4);
-              }
+            $sql31 = "select * from productosxtecnico where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND " . $tipo;
+            $res31 = $link->query($sql31);
+            $cuenta = mysqli_num_rows($res31);
+            $response['sql_select_1_' . ($valor["ttraspaso"])] = $sql31;
+            if ($cuenta > 0) {
+              // producto existe
+              $stoctec = obtenervalor("productosxtecnico", "pxt_cantidad", "where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"]);
+              $nuevostec = intval($stoctec) + intval($valor["cantidad"]);
+              $sql1 = "update productosxtecnico set pxt_cantidad=" . $nuevostec . " where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " && pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"];
+              //echo "cuenta => ".$cuenta." nuevo stock => ".$nuevostec." consulta =>".$sql1 ;
+              // return;
+              $res1 = $link->query($sql1);
+              $response['sql_update_1_' . $index] = $sql1;
             } else {
-              $tipo = '';
-              if ((int)$valor["ttraspaso"] == 1) {
-                $tipo = 'pxt_tipo=1';
-                $idprod = $valor["idpro"];
-                $ideasi = 0;
-              } else {
-                $tipo = 'pxt_tipo=2';
-                $sql = "SELECT * FROM equipos_asociados WHERE easi_id={$idpro}";
-                $res = $link->query($sql);
-                $val = mysqli_fetch_array($res);
-                $idprod = $val['easi_idgps'];
-                $ideasi = $val['easi_id'];
-              }
-              $sql31 = "select * from productosxtecnico where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND " . $tipo;
-              $res31 = $link->query($sql31);
-              $cuenta = mysqli_num_rows($res31);
-              $response['sql_select_1_' . ($valor["ttraspaso"])] = $sql31;
-              if ($cuenta > 0) {
-                // producto existe
-                $stoctec = obtenervalor("productosxtecnico", "pxt_cantidad", "where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " AND pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"]);
-                $nuevostec = intval($stoctec) + intval($valor["cantidad"]);
-                $sql1 = "update productosxtecnico set pxt_cantidad=" . $nuevostec . " where pxt_idpro=" . $idprod . " AND pxt_idtecnico=" . $idtecnico . " && pxt_estado=1 AND pxt_tipo=" . $valor["ttraspaso"];
-                $res1 = $link->query($sql1);
-                $response['sql_update_1_' . $index] = $sql1;
-              } else {
-                $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . "," . $valor["cantidad"] . "," . $idprod . ",1,'Traspaso desde bodega principal'," . $ideasi . "," . $valor["ttraspaso"] . ",0)";
-                $res = $link->query($sql3);
-                $response['sql_insert_1_' . $index] = $sql3;
-              }
+              $sql3 = "insert into productosxtecnico(pxt_idtecnico,pxt_cantidad,pxt_idpro,pxt_estado,pxt_observaciones,pxt_ideasi,pxt_tipo,pxt_subestado)values(" . $datos["bodega"] . "," . $valor["cantidad"] . "," . $idprod . ",1,'Traspaso desde bodega principal'," . $ideasi . "," . $valor["ttraspaso"] . ",0)";
+              $res = $link->query($sql3);
+              $response['sql_insert_1_' . $index] = $sql3;
             }
           }
         }
-  
-        $link->commit(); // Confirmar la transacción si todo sale bien
-        $response['logo'] = 'success'; // Indicador de éxito para el frontend
-        $response['mensaje'] = 'Traspaso realizado correctamente.'; // Mensaje de éxito para el usuario
-  
-      } catch (\Throwable $th) {
-        $link->rollback(); // Revertir la transacción en caso de error
-        $dataSend = array();
-        $dataSend[0] = '' . $th;
-        $response['logo'] = 'error'; // Indicador de error para el frontend
-        $response['mensaje'] = 'Error al realizar el traspaso. Por favor, contacte al administrador. Detalles del error: ' . $th->getMessage(); // Mensaje de error para el usuario
       }
       echo json_encode($response);
-      break;
+    } catch (\Throwable $th) {
+      $dataSend = array();
+      $dataSend[0] = '' . $th;
+      echo json_encode($dataSend);
+    }
+    //echo json_encode($devoluciones);
+    break;
 
   case 'newnuevadevolucion':
     $datos = json_decode($_REQUEST["devolucion"], true);
@@ -4494,47 +4550,75 @@ die();*/
     echo "proveedor eliminado";
     break;
 
-  case 'getdettraspasos':
+    case 'getdettraspasos':
 
-    $recibe   = json_decode($_REQUEST['envio'], true);
-    $sql      = "SELECT * FROM traspasos_series where tra_id = " . $recibe["idtraspaso"] . "";
-    $res      = $link->query($sql);
-    $fila     = mysqli_fetch_array($res);
-    $vardeta  = json_decode($fila['tra_detalle'], true);
-    $tablauno = array();
-    $tablados = array();
-
-    foreach ($vardeta as $key) {
-      $sql1  = "SELECT t1.*,t2.pro_nombre, if(t1.ser_condicion=1,'BUENO','MALO') as condicion
-                FROM serie_guia t1
-                LEFT OUTER JOIN productos t2 on t2.pro_id = t1.pro_id
-                where ser_id = {$key['id']}";
-      $res1  = $link->query($sql1);
-      $fila1 = mysqli_fetch_array($res1);
-      array_push($tablados, array('ser_codigo' => $fila1['ser_codigo'], 'pro_nombre' => $fila1['pro_nombre'], 'pro_id' => $fila1['pro_id'], 'ser_id' => $fila1['ser_id'], 'ser_condicion' => $fila1['condicion']));
-    }
-
-    if ($fila['usu_id_envia'] == 0) {
-      $envia = 26;
-    } else {
-      $envia = $fila['usu_id_envia'];
-    }
-
-    $sql2  = "SELECT t1.*,t2.pro_nombre, if(t1.ser_condicion=1,'BUENO','MALO') as condicion
-                FROM serie_guia t1
-                LEFT OUTER JOIN productos t2 on t2.pro_id = t1.pro_id
-                where t1.usu_id_cargo = {$envia}";
-    $res2  = $link->query($sql2);
-
-    foreach ($res2 as $key2) {
-      array_push($tablauno, array('ser_codigo' => $key2['ser_codigo'], 'pro_nombre' => $key2['pro_nombre'], 'pro_id' => $key2['pro_id'], 'ser_id' => $key2['ser_id'], 'ser_condicion' => $key2['condicion']));
-    }
-
-    $devuelve = array('usu_id_envia' => $envia, 'usu_id_recibe' => $fila['usu_id_recibe'], 'tra_observacion' => $fila['tra_observacion'], 'tra_fecha' => $fila['tra_fecha'], 'tablauno' => $tablauno, 'tablados' => $tablados);
-
-    echo json_encode($devuelve);
-
-    break;
+      $recibe   = json_decode($_REQUEST['envio'], true);
+      $sql      = "SELECT * FROM traspasos_series where tra_id = " . $recibe["idtraspaso"];
+      $res      = $link->query($sql);
+      $fila     = mysqli_fetch_array($res);
+      $vardeta  = json_decode($fila['tra_detalle'], true);
+      $tablauno = array();
+      $tablados = array();
+  
+      foreach ($vardeta as $key) {
+          $sql1  = "SELECT t1.*, t2.pro_nombre, IF(t1.ser_condicion=1,'BUENO','MALO') as condicion
+                    FROM serie_guia t1
+                    LEFT OUTER JOIN productos t2 on t2.pro_id = t1.pro_id
+                    WHERE ser_id = {$key['id']}";
+          $res1  = $link->query($sql1);
+          $fila1 = mysqli_fetch_array($res1);
+          // Determinar si tiene serie (se usa ser_codigo)
+          $tiene_serie = (isset($fila1['ser_codigo']) && trim($fila1['ser_codigo']) != '') ? "SI" : "NO";
+          array_push($tablados, array(
+              'ser_codigo'    => $fila1['ser_codigo'], 
+              'pro_nombre'    => $fila1['pro_nombre'], 
+              'pro_id'        => $fila1['pro_id'], 
+              'ser_id'        => $fila1['ser_id'], 
+              'ser_condicion' => $fila1['condicion'],
+              'tiene_serie'   => $tiene_serie
+          ));
+      }
+  
+      if ($fila['usu_id_envia'] == 0) {
+          $envia = 26;
+      } else {
+          $envia = $fila['usu_id_envia'];
+      }
+  
+      $sql2  = "SELECT t1.*, t2.pro_nombre, IF(t1.ser_condicion=1,'BUENO','MALO') as condicion
+          FROM serie_guia t1
+          LEFT OUTER JOIN productos t2 on t2.pro_id = t1.pro_id
+          WHERE t1.usu_id_cargo = {$envia}
+            AND t1.ser_estado = 1
+            AND t1.ser_condicion = 1
+            AND t1.ser_instalado = 0";
+      $res2  = $link->query($sql2);
+  
+      foreach ($res2 as $key2) {
+          $tiene_serie = (isset($key2['ser_codigo']) && trim($key2['ser_codigo']) != '') ? "SI" : "NO";
+          array_push($tablauno, array(
+              'ser_codigo'    => $key2['ser_codigo'], 
+              'pro_nombre'    => $key2['pro_nombre'], 
+              'pro_id'        => $key2['pro_id'], 
+              'ser_id'        => $key2['ser_id'], 
+              'ser_condicion' => $key2['condicion'],
+              'tiene_serie'   => $tiene_serie
+          ));
+      }
+  
+      $devuelve = array(
+          'usu_id_envia'   => $envia, 
+          'usu_id_recibe'  => $fila['usu_id_recibe'], 
+          'tra_observacion'=> $fila['tra_observacion'], 
+          'tra_fecha'      => $fila['tra_fecha'], 
+          'tablauno'       => $tablauno, 
+          'tablados'       => $tablados
+      );
+  
+      echo json_encode($devuelve);
+  
+      break;
+  
 
   case 'edittraspasoser':
     $recibe = json_decode($_REQUEST['envio'], true);
@@ -7954,38 +8038,48 @@ OPERACIONES TICKETS
 
     echo json_encode($prod);
     break;
+    case 'productoxTecnico':
 
-  case 'productoxTecnico':
-
-    $productos = array();
-    $sql       = "SELECT t1.*, t2.pro_serie, t2.pro_nombre, if(t1.ser_condicion=1, 'BUENO',if(t1.ser_condicion=0, 'MALO','NO REGISTRADO')) as condicion, if(t1.ser_tracking=1, 'Preparación',if(t1.ser_tracking=2, 'En Transito',if(t1.ser_tracking=3, 'Recepcionado','No Identificado'))) as Tracking
-      FROM serie_guia t1
-      left outer join productos t2 on t2.pro_id = t1.pro_id
-      where t1.usu_id_cargo = {$_REQUEST['idtecnico']} and t1.ser_estado = 1";
-    $res        = $link->query($sql);
-    $productos  = array();
-    while ($fila = mysqli_fetch_array($res)) {
-      $tieneserie = '';
-      $serie      = '';
-
-      if ((int)$fila['pro_serie'] == 1) {
-        $tieneserie = 'SI';
-        if ($fila['ser_codigo'] != '') {
-          $serie = $fila['ser_codigo'];
-        } else {
-          $serie = '';
-        }
-      } else {
-        $tieneserie = 'NO';
-        $serie = '';
+      $productos = array();
+      $sql = "SELECT t1.*, t2.pro_serie, t2.pro_nombre, 
+              IF(t1.ser_condicion=1, 'BUENO', IF(t1.ser_condicion=0, 'MALO','NO REGISTRADO')) AS condicion, 
+              IF(t1.ser_tracking=1, 'Preparación', 
+                 IF(t1.ser_tracking=2, 'En Transito', 
+                    IF(t1.ser_tracking=3, 'Recepcionado','No Identificado'))) AS Tracking
+              FROM serie_guia t1
+              LEFT OUTER JOIN productos t2 ON t2.pro_id = t1.pro_id
+              WHERE t1.usu_id_cargo = {$_REQUEST['idtecnico']} 
+              AND t1.ser_estado = 1";
+  
+      $res = $link->query($sql);
+  
+      while ($fila = mysqli_fetch_array($res)) {
+          $tieneserie = ((int)$fila['pro_serie'] == 1) ? 'SI' : 'NO';
+          $serie = ($tieneserie == 'SI' && !empty($fila['ser_codigo'])) ? $fila['ser_codigo'] : '';
+  
+          $producto = array(
+              'nomtracking' => $fila['ser_tracking_courrier'], 
+              'ser_instalado' => $fila['ser_instalado'], 
+              'rectracking' => $fila['ser_tracking_recibe'], 
+              'fechatracking' => $fila['ser_tracking_fecha'], 
+              'codtracking' => $fila['ser_tracking_codigo'], 
+              'tracking' => $fila['Tracking'], 
+              'tipo' => 1, 
+              'estado' => $fila['condicion'], 
+              'cantidad' => 1, 
+              'producto' => $fila['pro_nombre'], 
+              'tieneserie' => $tieneserie, 
+              'serie' => $serie, 
+              'observacion' => ($fila['ser_observacion'] == null ? '-' : $fila['ser_observacion']), 
+              "kitdetalle" => array()
+          );
+  
+          array_push($productos, $producto);
       }
-
-      array_push($productos, array('nomtracking' => $fila['ser_tracking_courrier'], 'ser_instalado' => $fila['ser_instalado'], 'rectracking' => $fila['ser_tracking_recibe'], 'fechatracking' => $fila['ser_tracking_fecha'], 'codtracking' => $fila['ser_tracking_codigo'], 'tracking' => $fila['Tracking'], 'tipo' => 1, 'estado' => $fila['condicion'], 'cantidad' => 1, 'producto' => $fila['pro_nombre'], 'tieneserie' => $tieneserie, 'serie' => $fila['ser_codigo'], 'observacion' => ($fila['ser_observacion'] == null ? '-' : $fila['ser_observacion']), "kitdetalle" => array()));
-    }
-    $pxt = $productos;
-    echo json_encode($pxt);
-
-    break;
+  
+      echo json_encode($productos);
+      break;
+  
 
   case 'agendarTicket':
 
