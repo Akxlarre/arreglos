@@ -27,9 +27,8 @@ function cellColor($cells, $color)
   global $objPHPExcel;
   $objPHPExcel->getActiveSheet()->getStyle($cells)->getFill()->applyFromArray(array('type' => PHPExcel_Style_Fill::FILL_SOLID, 'startcolor' => array('rgb' => $color)));
 }
-
-// Bloque utilizado para debuggear
-/* $log_dir = "/var/www/html/cloux/logs"; // Ruta del log
+//debug 
+ /* $log_dir = "/var/www/html/cloux/logs"; // Ruta del log
 if (!file_exists($log_dir)) {
     mkdir($log_dir, 0777, true);
 }
@@ -46,7 +45,7 @@ if (isset($link) && mysqli_connect_errno()) {
       "❌ Error de conexión a MySQL: " . mysqli_connect_error() . "\n", 
       FILE_APPEND
   );
-} */
+}  */
 
 function ejecutarConsulta($sql, $link) {
   $resultado = $link->query($sql);
@@ -4083,6 +4082,7 @@ $inventario["pxv"]=$pxv;*/
       }
     
       $idtecnico    = $datos["bodega"];
+      $idtecnico2  = $datos["bodega2"];
       $fecharequest = $datos["fecha"];
       $productos    = isset($datos['productos']) ? $datos['productos'] : [];
       $observaciones = $datos['observaciones'];
@@ -4154,8 +4154,8 @@ $inventario["pxv"]=$pxv;*/
           exit(json_encode(["mensaje" => "No hay productos válidos para traspasar", "logo" => "error"]));
       }
     
-      $sql = "INSERT INTO traspasos_series (tra_fecha, usu_id_recibe, tra_observacion, usu_modifica, tra_detalle) 
-              VALUES ('{$fecharequest}', {$idtecnico}, '{$observaciones}', {$usumod}, '" . json_encode($prods) . "')";
+      $sql = "INSERT INTO traspasos_series (tra_fecha, usu_id_envia, usu_id_recibe, tra_observacion, usu_modifica, tra_detalle) 
+            VALUES ('{$fecharequest}', {$idtecnico2}, {$idtecnico}, '{$observaciones}', {$usumod}, '" . json_encode($prods) . "')";
     
       if (!$link->query($sql)) {
           exit(json_encode(["mensaje" => "Error en la base de datos", "logo" => "error"]));
@@ -4619,64 +4619,153 @@ die();*/
   
       break;
   
+      
+      case 'edittraspasoser':
 
-  case 'edittraspasoser':
-    $recibe = json_decode($_REQUEST['envio'], true);
-    $sql    = "SELECT * FROM traspasos_series where tra_id = {$recibe['idtraspaso']}";
-    $res    = $link->query($sql);
-    $fila   = mysqli_fetch_array($res);
-
-    if ($recibe['opciontecnico'] == 1) {
-      $fecha = "";
-      if ($fila['tra_fecha'] == '' || $fila['tra_fecha'] == null || $fila['tra_fecha'] == 0) {
-        $fechan = "";
-      } else {
-        $fechan = ", ser_tracking_fecha = '{$fila['tra_fecha']}'";
-      }
-
-      $sql1 = "update serie_guia set usu_id_cargo = {$fila['usu_id_recibe']}, ser_tracking = {$fila['tra_tracking']}, ser_tracking_codigo = '{$fila['tra_tracking_codigo']}', ser_tracking_courrier = '{$fila['tra_tracking_courrier']}', ser_tracking_recibe = '{$fila['tra_tracking_recibe']}' {$fechan} where ser_id = {$recibe['idserie']}";
-      $res1    = $link->query($sql1);
-      $vardeta = json_decode($fila['tra_detalle'], true);
-      $deta    = array();
-      foreach ($vardeta as $key) {
-        array_push($deta, array('id' => $key['id'], 'idpro' => $key['idpro']));
-      }
-
-      array_push($deta, array('id' => $recibe['idserie'], 'idpro' => $recibe['idproducto']));
-      $sql2 = "update traspasos_series set tra_detalle = '" . str_replace("\\", '', json_encode($deta)) . "' where tra_id = " . $recibe['idtraspaso'] . "";
-      $res2 = $link->query($sql2);
-
-      if ($res2) {
-        $devuelve = array('logo' => 'success', 'mensaje' => 'Cambio de serie realizado', 'sql' => $sql1);
-      } else {
-        $devuelve = array('logo' => 'error', 'mensaje' => 'Ha ocurrido un error', 'sql' => $sql1);
-      }
-
-      echo json_encode($devuelve);
-    } else if ($recibe['opciontecnico'] == 2) {
-
-      $sql1 = "update serie_guia set usu_id_cargo = {$fila['usu_id_envia']}, ser_tracking = 0, ser_tracking_codigo = '', ser_tracking_courrier = '', ser_tracking_recibe = '', ser_tracking_fecha = 0 where ser_id = {$recibe['idserie']}";
-      $res1    = $link->query($sql1);
-      $vardeta = json_decode($fila['tra_detalle'], true);
-      $deta    = array();
-      foreach ($vardeta as $key) {
-        if ($key['id'] != $recibe['idserie']) {
-          array_push($deta, array('id' => $key['id'], 'idpro' => $key['idpro']));
+    
+        // Log de datos recibidos
+        $recibe = json_decode($_REQUEST['envio'], true);
+        file_put_contents($log_file,
+            "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Datos recibidos:\n" . print_r($recibe, true) . "\n\n",
+            FILE_APPEND
+        );
+    
+        // Obtener el registro de traspasos_series
+        $sql = "SELECT * FROM traspasos_series where tra_id = {$recibe['idtraspaso']}";
+        file_put_contents($log_file,
+            "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] SQL para obtener traspasos_series:\n$sql\n\n",
+            FILE_APPEND
+        );
+        $res = $link->query($sql);
+        if (!$res) {
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Error en query: " . $link->error . "\n\n",
+                FILE_APPEND
+            );
         }
-      }
-      $sql2 = "update traspasos_series set tra_detalle = '" . str_replace("\\", '', json_encode($deta)) . "' where tra_id = " . $recibe['idtraspaso'] . "";
-      $res2 = $link->query($sql2);
-
-      if ($res2) {
-        $devuelve = array('logo' => 'success', 'mensaje' => 'Cambio de serie realizado', 'sql' => $sql1);
-      } else {
-        $devuelve = array('logo' => 'error', 'mensaje' => 'Ha ocurrido un error', 'sql' => $sql1);
-      }
-
-      echo json_encode($devuelve);
-    }
-
-    break;
+        $fila = mysqli_fetch_array($res);
+        file_put_contents($log_file,
+            "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Registro traspasos_series obtenido:\n" . print_r($fila, true) . "\n\n",
+            FILE_APPEND
+        );
+    
+        if ($recibe['opciontecnico'] == 1) {
+            // Log: mostrar el valor de usu_id_recibe
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Opción técnico 1: usu_id_recibe = " . $fila['usu_id_recibe'] . "\n\n",
+                FILE_APPEND
+            );
+            
+            // Procesar fecha para tracking
+            if ($fila['tra_fecha'] == '' || $fila['tra_fecha'] == null || $fila['tra_fecha'] == 0) {
+                $fechan = "";
+            } else {
+                $fechan = ", ser_tracking_fecha = '{$fila['tra_fecha']}'";
+            }
+            
+            // Construir SQL de actualización en serie_guia
+            $sql1 = "update serie_guia set usu_id_cargo = {$fila['usu_id_recibe']}, ser_tracking = {$fila['tra_tracking']}, ser_tracking_codigo = '{$fila['tra_tracking_codigo']}', ser_tracking_courrier = '{$fila['tra_tracking_courrier']}', ser_tracking_recibe = '{$fila['tra_tracking_recibe']}' {$fechan} where ser_id = {$recibe['idserie']}";
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] SQL1 (opción 1):\n$sql1\n\n",
+                FILE_APPEND
+            );
+            $res1 = $link->query($sql1);
+            if (!$res1) {
+                file_put_contents($log_file,
+                    "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Error en SQL1: " . $link->error . "\n\n",
+                    FILE_APPEND
+                );
+            }
+    
+            // Procesar y actualizar el detalle
+            $vardeta = json_decode($fila['tra_detalle'], true);
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] tra_detalle original:\n" . print_r($vardeta, true) . "\n\n",
+                FILE_APPEND
+            );
+            $deta = array();
+            foreach ($vardeta as $key) {
+                array_push($deta, array('id' => $key['id'], 'idpro' => $key['idpro']));
+            }
+            array_push($deta, array('id' => $recibe['idserie'], 'idpro' => $recibe['idproducto']));
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] tra_detalle modificado:\n" . print_r($deta, true) . "\n\n",
+                FILE_APPEND
+            );
+            $sql2 = "update traspasos_series set tra_detalle = '" . str_replace("\\", '', json_encode($deta)) . "' where tra_id = " . $recibe['idtraspaso'];
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] SQL2 (opción 1):\n$sql2\n\n",
+                FILE_APPEND
+            );
+            $res2 = $link->query($sql2);
+            if (!$res2) {
+                file_put_contents($log_file,
+                    "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Error en SQL2: " . $link->error . "\n\n",
+                    FILE_APPEND
+                );
+            }
+    
+            if ($res2) {
+                $devuelve = array('logo' => 'success', 'mensaje' => 'Cambio de serie realizado', 'sql' => $sql1);
+            } else {
+                $devuelve = array('logo' => 'error', 'mensaje' => 'Ha ocurrido un error', 'sql' => $sql1);
+            }
+            echo json_encode($devuelve);
+        } else if ($recibe['opciontecnico'] == 2) {
+            // Para opción 2, loggear el valor de usu_id_envia
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Opción técnico 2: usu_id_envia = " . $fila['usu_id_envia'] . "\n\n",
+                FILE_APPEND
+            );
+            $sql1 = "update serie_guia set usu_id_cargo = {$fila['usu_id_envia']}, ser_tracking = 0, ser_tracking_codigo = '', ser_tracking_courrier = '', ser_tracking_recibe = '', ser_tracking_fecha = 0 where ser_id = {$recibe['idserie']}";
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] SQL1 (opción 2):\n$sql1\n\n",
+                FILE_APPEND
+            );
+            $res1 = $link->query($sql1);
+            if (!$res1) {
+                file_put_contents($log_file,
+                    "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Error en SQL1 (opción 2): " . $link->error . "\n\n",
+                    FILE_APPEND
+                );
+            }
+            $vardeta = json_decode($fila['tra_detalle'], true);
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] tra_detalle original (opción 2):\n" . print_r($vardeta, true) . "\n\n",
+                FILE_APPEND
+            );
+            $deta = array();
+            foreach ($vardeta as $key) {
+                if ($key['id'] != $recibe['idserie']) {
+                    array_push($deta, array('id' => $key['id'], 'idpro' => $key['idpro']));
+                }
+            }
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] tra_detalle modificado (opción 2):\n" . print_r($deta, true) . "\n\n",
+                FILE_APPEND
+            );
+            $sql2 = "update traspasos_series set tra_detalle = '" . str_replace("\\", '', json_encode($deta)) . "' where tra_id = " . $recibe['idtraspaso'];
+            file_put_contents($log_file,
+                "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] SQL2 (opción 2):\n$sql2\n\n",
+                FILE_APPEND
+            );
+            $res2 = $link->query($sql2);
+            if (!$res2) {
+                file_put_contents($log_file,
+                    "[" . date('Y-m-d H:i:s') . "] [edittraspasoser] Error en SQL2 (opción 2): " . $link->error . "\n\n",
+                    FILE_APPEND
+                );
+            }
+    
+            if ($res2) {
+                $devuelve = array('logo' => 'success', 'mensaje' => 'Cambio de serie realizado', 'sql' => $sql1);
+            } else {
+                $devuelve = array('logo' => 'error', 'mensaje' => 'Ha ocurrido un error', 'sql' => $sql1);
+            }
+            echo json_encode($devuelve);
+        }
+      break;
+    
 
   case 'deletedev':
 
@@ -10167,6 +10256,74 @@ OPERACIONES RR.HH
     echo json_encode($devuelve);
 
     break;
+
+    case 'buscarTraspasoPorSerie':
+      header('Content-Type: application/json; charset=UTF-8');
+  
+      $serieBuscada = isset($_REQUEST['serie']) ? $_REQUEST['serie'] : '';
+      if (trim($serieBuscada) == "") {
+          echo json_encode(array('error' => 'Debe ingresar una serie'));
+          exit;
+      }
+  
+      $serieBuscadaEsc = $link->real_escape_string($serieBuscada);
+      $sql = "
+      SELECT 
+          sg.*, 
+          p.pro_nombre,
+          per.per_nombrecorto AS usu_id_cargo_nombre
+      FROM serie_guia sg
+      LEFT JOIN productos p  ON p.pro_id   = sg.pro_id
+      LEFT JOIN personal per ON per.per_id = sg.usu_id_cargo
+      WHERE sg.ser_codigo = '$serieBuscadaEsc'
+      ORDER BY sg.ser_id DESC 
+      LIMIT 1
+      ";
+      $res = $link->query($sql);
+  
+      if ($res === false) {
+          echo json_encode(array('error' => 'Error en la consulta de serie'));
+          exit;
+      }
+  
+      if ($res->num_rows > 0) {
+          $serieGuia = $res->fetch_assoc();
+          $ser_id = $serieGuia['ser_id'];
+  
+          $sql2 = "
+          SELECT 
+              ts.*,
+              pe1.per_nombrecorto AS usu_envia_nombre,
+              pe2.per_nombrecorto AS usu_recibe_nombre
+          FROM traspasos_series ts
+          LEFT JOIN personal pe1 ON pe1.per_id = ts.usu_id_envia
+          LEFT JOIN personal pe2 ON pe2.per_id = ts.usu_id_recibe
+          WHERE ts.tra_detalle LIKE '%\"id\":$ser_id%' 
+          ORDER BY ts.tra_id DESC
+          ";
+          $res2 = $link->query($sql2);
+  
+          if ($res2 === false) {
+              echo json_encode(array('error' => 'Error en la consulta de traspasos'));
+              exit;
+          }
+  
+          $traspasos = array();
+          while ($row2 = $res2->fetch_assoc()) {
+              $traspasos[] = $row2;
+          }
+  
+          // 3. Devolvemos la serieGuia (con pro_nombre y usu_id_cargo_nombre) y los traspasos
+          echo json_encode(array(
+              'serieGuia' => $serieGuia,
+              'traspasos' => $traspasos
+          ));
+      } else {
+          // No se encontró la serie
+          echo json_encode(array('error' => 'No se encontró esa serie en la base de datos.'));
+      }
+    break;
+  
 
   case 'updateTicket':
 
